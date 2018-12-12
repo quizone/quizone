@@ -1,0 +1,25 @@
+Set,Rate,0.004
+Set,Scale,8
+
+Quiz.Opacity,0,0
+Quiz.Initialize,10,1,Rate,1,0.2
+Set,QuizLabel,"Thai Kings"
+Query.Set,QuizID,1
+Delay,0.1
+
+#Quiz.Initialize,10,1,Rate,1,0.2
+Quiz.SetPath,"c:/Quizone/Quizes/ThaiKings/"
+Quiz.LoadImage,0,"1.png",Scale,Scale
+Quiz.LoadImage,1,"2.png",Scale,Scale
+Quiz.LoadImage,2,"3.png",Scale,Scale
+Quiz.LoadImage,3,"4.png",Scale,Scale
+Quiz.LoadImage,4,"5.png",Scale,Scale
+Quiz.LoadImage,5,"6.png",Scale,Scale
+Quiz.LoadImage,6,"7.png",Scale,Scale
+Quiz.LoadImage,7,"8.png",Scale,Scale
+Quiz.LoadImage,8,"9.png",Scale,Scale
+Quiz.LoadImage,9,"10.png",Scale,Scale
+Quiz.LoadImage,10,"frame.png",5,5,0
+
+Script.RunScript,QuizStart
+

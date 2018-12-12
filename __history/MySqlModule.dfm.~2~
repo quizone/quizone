@@ -1,0 +1,21 @@
+object DataModule2: TDataModule2
+  OldCreateOrder = False
+  Height = 397
+  Width = 518
+  object MyQuery1: TMyQuery
+    SQL.Strings = (
+      'CREATE TABLE `02` ('
+      #9'`id` INT NOT NULL,'
+      #9'`Question` TEXT NOT NULL,'
+      #9'`Hint` TEXT NOT NULL'
+      ')'
+      'COLLATE='#39'utf8_general_ci'#39
+      ';')
+    Left = 104
+    Top = 70
+  end
+  object MyConnection1: TMyConnection
+    Left = 96
+    Top = 144
+  end
+end

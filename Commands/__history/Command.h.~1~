@@ -1,0 +1,93 @@
+
+//---------------------------------------------------------------------------
+
+#ifndef CommandH
+#define CommandH
+//---------------------------------------------------------------------------
+
+#include <string>
+//#include <time.h>
+//#include <chrono>
+
+#include <sys/timeb.h>
+#include "CommandErrorList.h"
+#include "parser.h"
+
+#define MAX_PARAM_COUNT 512
+
+using namespace std;
+
+class TParameters
+{
+friend class TCommand;
+private:
+Tokentypes ParamType;
+string Value;
+//TVars * Vars;
+public:
+//TParameters(TVars * Vars);
+double GetAsNumber();
+string GetAsString();
+bool IsValid();
+bool IsNumber() {return (ParamType==NUMBER);};
+bool IsString() {return (ParamType==STRING);};
+bool IsEmpty() {return (ParamType==EMPTY);};
+};
+
+class TCommand
+{
+//command
+private:
+	string Command;
+	timeb tmb;
+	int Source;
+	unsigned long CommandExecuteDelay; //ms
+//Organization
+	unsigned long LinkCount;
+	bool Parse();
+
+//parsing
+	char *Expression;
+	string CommandClass;
+	string CommandName;
+	int NumberOfParams;
+	int ErrorCode;
+	TParameters* Params;
+	int isdelim(char c);
+
+
+public:
+	static TVars * Vars;
+	TCommand(string CommandString, unsigned long mmDelay = 0, int Source=0);
+	void UpdateCommand(string CommandString, unsigned long mmDelay = 0, int Source=0);
+	~TCommand();
+
+	string GetCommandString() {return Command;};
+	int GetSource() {return Source;};
+	unsigned long GetDelay() {return CommandExecuteDelay;};
+	//TDateTime Time;
+
+	// Parser
+	string GetCommandName() {return CommandName;};
+	string GetCommandClass() {return CommandClass;};
+	int GetParamCount() {return NumberOfParams;};
+	TParameters* Param(int id) {if ((id>=0) && (id<NumberOfParams)) return &Params[id]; return NULL; };
+
+int GetLastError() {return ErrorCode; };
+//result
+private:
+	string ResultMessage;
+	int ResultCode;
+	bool IsCompleted;
+
+//Functions
+public:
+	void InsertResult(int Code, string Msg="");
+	void RemoveResult();
+	bool GetResult(int *Code=NULL, string *Msg=NULL);
+	void DecreaseRef();
+	void IncrementRef();
+};
+
+
+#endif

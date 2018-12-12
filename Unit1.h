@@ -1,0 +1,107 @@
+//---------------------------------------------------------------------------
+
+#ifndef Unit1H
+#define Unit1H
+//---------------------------------------------------------------------------
+#include <System.Classes.hpp>
+#include <FMX.Controls.hpp>
+#include <FMX.Forms.hpp>
+#include <FMX.Ani.hpp>
+#include <FMX.ExtCtrls.hpp>
+#include <FMX.ImgList.hpp>
+#include <FMX.Layouts.hpp>
+#include <FMX.Objects.hpp>
+#include <FMX.StdCtrls.hpp>
+#include <FMX.Types.hpp>
+#include <System.ImageList.hpp>
+
+#include "maincontrol.h"
+#include <IdBaseComponent.hpp>
+#include <IdComponent.hpp>
+#include <IdExplicitTLSClientServerBase.hpp>
+#include <IdFTP.hpp>
+#include <IdTCPClient.hpp>
+#include <IdTCPConnection.hpp>
+#include <FMX.Controls.Presentation.hpp>
+#include <FMX.Edit.hpp>
+#include <FMX.Memo.hpp>
+#include <FMX.ScrollBox.hpp>
+#include <System.Net.HttpClient.hpp>
+#include <System.Net.HttpClientComponent.hpp>
+#include <System.Net.URLClient.hpp>
+#include <Data.Bind.Components.hpp>
+#include <Data.Bind.ObjectScope.hpp>
+#include <IPPeerClient.hpp>
+#include <REST.Client.hpp>
+#include <IdGlobal.hpp>
+#include <IdSocketHandle.hpp>
+#include <IdUDPBase.hpp>
+#include <IdUDPServer.hpp>
+
+//---------------------------------------------------------------------------
+class TForm1 : public TForm
+{
+__published:	// IDE-managed Components
+	TTimer *Timer1;
+	TIdFTP *IdFTP1;
+	TMemo *Memo1;
+	TCheckBox *CheckBox1;
+	TCheckBox *CheckBox2;
+	TNetHTTPRequest *NetHTTPRequest1;
+	TRESTClient *RESTClient1;
+	TIdUDPServer *IdUDPServer1;
+	TImage *Image1;
+	TPanel *Panel1;
+	TMemo *Memo2;
+	TEdit *Edit1;
+	TCheckBox *CheckBox3;
+	void __fastcall Timer1Timer(TObject *Sender);
+	void __fastcall FormCreate(TObject *Sender);
+	void __fastcall FormKeyDown(TObject *Sender, WORD &Key, System::WideChar &KeyChar,
+		  TShiftState Shift);
+	void __fastcall IdUDPServer1UDPRead(TIdUDPListenerThread *AThread, const TIdBytes AData,
+          TIdSocketHandle *ABinding);
+	void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
+	void __fastcall Image1DblClick(TObject *Sender);
+	void __fastcall Image1Click(TObject *Sender);
+	void __fastcall Panel1MouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift,
+          float X, float Y);
+	void __fastcall Panel1MouseUp(TObject *Sender, TMouseButton Button, TShiftState Shift,
+		  float X, float Y);
+	void __fastcall Panel1MouseMove(TObject *Sender, TShiftState Shift, float X, float Y);
+	void __fastcall Image1MouseMove(TObject *Sender, TShiftState Shift, float X, float Y);
+	void __fastcall Image1MouseUp(TObject *Sender, TMouseButton Button, TShiftState Shift,
+          float X, float Y);
+	void __fastcall CheckBox3Change(TObject *Sender);
+	void __fastcall Edit1KeyDown(TObject *Sender, WORD &Key, System::WideChar &KeyChar,
+          TShiftState Shift);
+
+
+private:	// User declarations
+   bool PanelIsPressed;
+   int PanelStartX;
+   int PanelStartY;
+   bool InsertLog;
+
+
+public:		// User declarations
+	TImage** Images;
+	double* LastX;
+	double* LastY;
+	TLabel** Labels;
+    TLabel** ItemLabels;
+	TLabel* MainLabel;
+	TAxisMotion* MotionsX;
+	TAxisMotion* MotionsY;
+
+
+	int TotalWidth;
+	TMainControl *MC;
+	TCommandQueue *CMD;
+	__fastcall TForm1(TComponent* Owner);
+	void ProcessString(TIdBytes AData, int Source);
+};
+//---------------------------------------------------------------------------
+extern PACKAGE TForm1 *Form1;
+//---------------------------------------------------------------------------
+#endif

@@ -1,0 +1,48 @@
+//---------------------------------------------------------------------------
+
+#ifndef parserH
+#define parserH
+//---------------------------------------------------------------------------
+//************************************
+#include <iostream>
+#include <cstdlib>
+#include <cctype>
+#include <cstring>
+#include <string.h>
+
+#include "CommandErrorList.h"
+
+using namespace std;
+
+enum Tokentypes {DELIMITER = 1, VARIABLE =2, NUMBER = 3, STRING = 4, EMPTY =5};
+//enum Tokentypes { DELIMITER = 1}; VARIABLE, NUMBER};  //DEL = 1; VAR = 2; NUM = 3.
+class TAnalyzer
+{
+private:
+int ErrorCode;
+char *pExpresion;     // Points to the exp<b></b>ression.
+char *Expresion;
+char token[800];       // Holds current token.
+char tokenType;       // Holds token's type.
+void recursive1(double &culmination);
+void recursive2(double &culmination);
+void recursive3(double &culmination);
+void recursive4(double &culmination);
+void recursive5(double &culmination);
+void bomb(double &culmination);
+void nextToken();
+void serror(int error);
+int isdelim(char c);
+TVars* Vars;
+TStringVars* StringVars;
+
+
+public:
+TAnalyzer(TVars* Vars);                      // analyzer constructor.
+double sniff(const char *exp);          // analyzer entry point.
+int GetLastError();
+double GetVarValue(char*);
+~TAnalyzer();                      // analyzer destructor.
+};
+
+#endif

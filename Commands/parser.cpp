@@ -1,0 +1,280 @@
+//---------------------------------------------------------------------------
+
+#pragma hdrstop
+
+#include "parser.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+
+TVars* Vars;
+//************************************
+// 13 Analyzer constructor.
+//************************************
+TAnalyzer::TAnalyzer(TVars* Vars)
+{
+ErrorCode = 0;
+pExpresion = NULL;
+this->Vars = Vars;
+}
+
+TAnalyzer::TAnalyzer(TStringVars* StringVars)
+{
+ErrorCode = 0;
+pExpresion = NULL;
+this->StringVars = StringVars;
+}
+//************************************
+// 14 TAnalyzer entry point.
+//************************************
+double TAnalyzer::sniff(const char *exp)
+{
+ErrorCode = 0;
+double culmination;
+
+int i=0;
+while (exp[i++]!='\0');
+if (!i) {
+	serror(COMMAND::NO_EXP);                      // No exp<b></b>ression present.
+	return 0.0;
+	}
+
+Expresion = new char[i+1];
+
+strcpy(Expresion,exp);
+pExpresion = Expresion;
+
+nextToken();
+
+recursive1(culmination);
+
+if(*token) serror(COMMAND::SYNATX_ERROR);           // Last token must be null.
+delete [] Expresion;
+return culmination;
+}
+
+//************************************
+// 4 Add or subtract two terms.
+//************************************
+void TAnalyzer::recursive1(double &culmination)
+{
+register char beer;
+double bucket;
+
+recursive2(culmination);
+while((beer = *token) == '+' || beer == '-')
+{
+nextToken();
+recursive2(bucket);
+switch(beer)
+		{
+case '-':
+culmination = culmination - bucket;
+break;
+case '+':
+culmination = culmination + bucket;
+break;
+}
+}
+}
+
+//************************************
+// 5 Multiply or divide two factors.
+//************************************
+void TAnalyzer::recursive2(double &culmination)
+{
+register char beer;
+double bucket;
+
+recursive3(culmination);
+while((beer = *token) == '*' || beer == '/' || beer == '%')
+{
+nextToken();
+recursive3(bucket);
+switch(beer)
+{
+case '*':
+culmination = culmination * bucket;
+break;
+		  case '/':
+			culmination = culmination / bucket;
+			break;
+		  case '%':
+			culmination = (int) culmination % (int) bucket;
+			break;
+		}
+	}
+}
+
+//************************************
+// 6 Process an exponent.
+//************************************
+void TAnalyzer::recursive3(double &culmination)
+{
+double bucket, ex;
+register int t;
+
+recursive4(culmination);
+if(*token == '^')
+{
+nextToken();
+recursive3(bucket);
+ex = culmination;
+if(bucket == 0.0)
+{
+culmination = 1.0;
+return;
+}
+for(t=(int)bucket-1; t>0; --t) culmination = culmination * (double)ex;
+}
+}
+//************************************
+// 7 Evaluate a unary + or -.
+//************************************
+void TAnalyzer::recursive4(double &culmination)
+{
+register char  beer;
+
+beer = 0;
+if((tokenType == DELIMITER) && *token == '+' || *token == '-')
+{
+beer = *token;
+nextToken();
+}
+recursive5(culmination);
+if(beer == '-') culmination = -culmination;
+}
+
+//************************************
+// 8 Process a parenthesized exp<b></b>ression.
+//************************************
+void TAnalyzer::recursive5(double &culmination)
+{
+if((*token == '('))
+{
+nextToken();
+recursive1(culmination);
+if(*token != ')')
+serror(COMMAND::UNBALANCED);
+nextToken();
+}
+else bomb(culmination);
+}
+
+//************************************
+// 9 Get the value of a number.
+//************************************
+void TAnalyzer::bomb(double &culmination)
+{
+switch(tokenType)
+  {
+case NUMBER:
+culmination = atof(token);
+nextToken();
+return;
+case VARIABLE:
+culmination = GetVarValue(token);
+nextToken();
+return;
+default:
+serror(COMMAND::SYNATX_ERROR);
+  }
+}
+
+//************************************
+// 11 Display a syntax error.
+//************************************
+void TAnalyzer::serror(int error)
+{
+ErrorCode = error;
+}
+
+//************************************
+// 10 Obtain the next token.
+//************************************
+void TAnalyzer::nextToken()
+{
+register char *bucket;
+
+tokenType = 0;
+bucket = token;
+	*bucket = '\0';
+
+if(!*pExpresion) return; // At end of exp<b></b>ression.
+
+while(isspace(*pExpresion)) ++pExpresion; // Skip over white space.
+
+if(strchr("+-*/%^=()", *pExpresion))
+{
+tokenType = DELIMITER;
+// Advance to next char.
+*bucket++ = *pExpresion++;
+}
+else if(isalpha(*pExpresion))
+{
+while(!isdelim(*pExpresion)) *bucket++ = *pExpresion++;
+tokenType = VARIABLE;
+}
+else if(isdigit(*pExpresion))
+{
+while(!isdelim(*pExpresion)) *bucket++ = *pExpresion++;
+tokenType = NUMBER;
+}
+
+*bucket = '\0';
+}
+
+//************************************
+// 12 Return true if c is a delimiter.
+//************************************
+int TAnalyzer::isdelim(char c)
+{
+if(strchr(" +-/*%^=()", c) || c == 9 || c == '\r' || c == 0)
+return 1;
+return 0;
+}
+
+//************************************
+
+int TAnalyzer::GetLastError()
+{
+return ErrorCode;
+}
+
+//************************************
+// 15 TAnalyzer destructor.
+//************************************
+TAnalyzer::~TAnalyzer()
+{
+}
+
+
+//************************************
+double TAnalyzer::GetVarValue(char* var)
+{
+	TVars::const_iterator iter = Vars->find(var);
+	if (iter == Vars->end())
+		{
+		serror(COMMAND::VARIABLE_DOES_NOT_EXIST);
+		return 0;
+		}
+	else
+		{
+		return (double)iter->second;
+		}
+}
+
+
+string TAnalyzer::GetStringVarValue(const char* var)
+{
+	TStringVars::const_iterator iter = StringVars->find(var);
+	if (iter == StringVars->end())
+		{
+        return (string)var;
+	   //	serror(COMMAND::VARIABLE_DOES_NOT_EXIST);
+	   //	return 0;
+		}
+	else
+		{
+		return (string)iter->second;
+		}
+}

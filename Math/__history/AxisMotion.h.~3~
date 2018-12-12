@@ -1,0 +1,68 @@
+//---------------------------------------------------------------------------
+
+#ifndef AxisMotionH
+#define AxisMotionH
+
+#include <math.h>
+#include "geomets.h"
+//#include "GlobalFuncs.h"
+//#include "LogUnit.h"
+
+#define CIRCULAR360 0
+#define CIRCULAR180 1
+
+
+#define EPSILON 0.00000001
+
+template<class T>int sign(T t)
+{
+if (t>=0) return 1; else return -1;
+}
+
+//------------------------------------------
+
+Equal(double Value1, double Value2)
+{
+if (fabs(Value1-Value2) > EPSILON) return 0;
+return 1;
+}
+
+
+//---------------------------------------------------------------------------
+
+class TAxisMotion
+{
+private:
+double Ta;      // Acceleration time    s
+double Ts;      // sustain time         s
+double Td;      // deacceleration time  s
+double a;       // acceleration deg/sec^2
+double V0;      // initial speed        deg/s
+double V1;      //Target Speed
+double Vm;      //Max Speed
+double D0;      // Initial Position  deg
+double D1;      // Target Position   deg
+double b;
+bool IsJ;
+double J;
+
+bool IsCircle;
+int CircularType;
+
+public:
+double SetTargetDuration (double Xi,double Vi, double Xt, double Vt, double Dur,  double Acc, bool IsCircle=true, int CircularType = CIRCULAR360);
+void SetImmediateTarget(double Xt, double Vt, bool IsCircle= true, int CircularType = CIRCULAR360);
+double SetTargetPositionSpeedDuration(double Xi,double Vi, double Xt, double Vt, double Duration, double MaxAcc, double Vmax, bool IsCircle=true, bool InfinitSpeed = false, int CircularType = CIRCULAR360);
+void SetTarget(double Xi,double Vi, double Xt, double Vt, double Acc, double Vmax, bool IsCircle=true, bool InfinitSpeed = false, int CircularType = CIRCULAR360);
+void SetTargetSpeed(double Xi, double Vi, double Vt, double Acc, bool IsCircle = true, int CircularType = CIRCULAR360);
+double GetSpeed(double T);   // use this function for getting speed value in moment T
+double GetPosition(double T); // for getting D in time T. Can be used for future estimations
+
+
+double GetTa() {return Ta;};
+double GetTs() {return Ts;};
+double GetTd() {return Td;};
+double GetAcc() {return a;};
+};
+
+#endif

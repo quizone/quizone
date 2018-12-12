@@ -1,0 +1,91 @@
+ //---------------------------------------------------------------------------
+
+#pragma hdrstop
+
+#include "MainControl.h"
+#pragma package(smart_init)
+
+__fastcall TMainControl::TMainControl(bool CreateSuspended,TCommandQueue* Commands)
+: TCommandExecuter(CreateSuspended,Commands)
+{
+//Commands = new TCommandQueue;
+TCommand::Vars = new TVars;
+
+ReportCommands = new TCommandQueue;
+UICommands = NULL;
+//SendTicks = StartTicks;
+
+ScriptCommands = new TCommandQueue;
+ScriptControl = new TScriptControl(false,ScriptCommands);
+ScriptControl->InitializeScripts(9,this);
+
+TQuiz *Quiz;
+Quiz = new TQuiz();
+QuizCommands = new TCommandQueue;
+QuizControl = new TQuizControl(false,QuizCommands, Quiz);
+
+TQuery *Query;
+Query = new TQuery();
+QueryCommands = new TCommandQueue;
+QueryControl = new TQueryControl(false,QueryCommands, Query);
+}
+
+//---------------------------------------------------------------------------
+
+__fastcall TMainControl::~TMainControl()
+{
+Terminate();
+Sleep(200);
+}
+
+//---------------------------------------------------------------------------
+
+bool TMainControl::HandleCommand(TCommand* Command)
+{
+  ReportCommands->ForwardCommand(Command);
+	if (Command->GetCommandClass()=="UI")
+		{
+			if (UICommands!=NULL) UICommands->ForwardCommand(Command);
+			return true;
+		}
+	if (Command->GetCommandClass()=="Script")
+		{
+			if (ScriptCommands!=NULL) ScriptCommands->ForwardCommand(Command);
+			return true;
+		}
+	if ((Command->GetCommandClass()=="Quiz") || (Command->GetCommandClass()==""))
+		{
+			if (QuizCommands!=NULL) QuizCommands->ForwardCommand(Command);
+			return true;
+		}
+	if (Command->GetCommandClass()=="Query")
+		{
+			if (QueryCommands!=NULL) QueryCommands->ForwardCommand(Command);
+			return true;
+		}
+
+return false;
+}
+
+//---------------------------------------------------------------------------
+
+void TMainControl::HandleIdle()
+{
+Sleep(10);
+UpdateVar("SS",2);
+return;
+}
+
+
+//---------------------------------------------------------------------------
+
+void TMainControl::UpdateVar(string VarName,double VarValue)
+{
+TVars::const_iterator iter = TCommand::Vars->find(VarName);
+	if (iter == TCommand::Vars->end())
+		{
+		TCommand::Vars->insert(std::make_pair(VarName,VarValue));
+		}
+	else
+		TCommand::Vars->operator [](VarName) = VarValue;
+}

@@ -1,0 +1,12 @@
+id,01„M„T„Q„@„B„E„J
+id,02„T„L„I„S„K„@
+id,03„R„S„Q„E„K„O„H„@
+id,04„P„X„E„L„@
+id,05„K„O„M„@„Q
+id,06„M„T„V„@
+id,07„A„@„A„O„X„K„@
+id,08„P„@„T„K
+id,09„C„T„R„E„N„I„W„@
+id,10„S„@„Q„@„K„@„N
+id,11„K„T„H„N„E„X„I„K
+id,12„G„T„K

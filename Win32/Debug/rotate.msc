@@ -1,0 +1,13 @@
+Set,CurrentQuiz,CurrentQuiz+1
+Delay,0.1
+IfGreater,CurrentQuiz,LastQuiz,"Set,CurrentQuiz,FirstQuiz"
+Quiz.Opacity,0,1
+Delay,1
+
+Script.RunScript,CurrentQuiz
+
+Delay,QuizDuration
+
+Restart
+
+

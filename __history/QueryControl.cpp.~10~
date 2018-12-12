@@ -1,0 +1,332 @@
+//---------------------------------------------------------------------------
+
+#pragma hdrstop
+
+#include "QueryControl.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+
+//---------------------------------------------------------------------------
+
+wstring UTF8toUnicode(const string& s)
+{
+	wstring ws;
+	wchar_t wc;
+	for( int i = 0;i < s.length(); )
+	{
+		char c = s[i];
+		if ( (c & 0x80) == 0 )
+		{
+			wc = c;
+			++i;
+		}
+		else if ( (c & 0xE0) == 0xC0 )
+		{
+			wc = (s[i] & 0x1F) << 6;
+			wc |= (s[i+1] & 0x3F);
+			i += 2;
+		}
+		else if ( (c & 0xF0) == 0xE0 )
+		{
+			wc = (s[i] & 0xF) << 12;
+			wc |= (s[i+1] & 0x3F) << 6;
+			wc |= (s[i+2] & 0x3F);
+			i += 3;
+		}
+		else if ( (c & 0xF8) == 0xF0 )
+		{
+			wc = (s[i] & 0x7) << 18;
+			wc |= (s[i+1] & 0x3F) << 12;
+			wc |= (s[i+2] & 0x3F) << 6;
+			wc |= (s[i+3] & 0x3F);
+			i += 4;
+		}
+		else if ( (c & 0xFC) == 0xF8 )
+		{
+			wc = (s[i] & 0x3) << 24;
+			wc |= (s[i] & 0x3F) << 18;
+			wc |= (s[i] & 0x3F) << 12;
+			wc |= (s[i] & 0x3F) << 6;
+			wc |= (s[i] & 0x3F);
+			i += 5;
+		}
+		else if ( (c & 0xFE) == 0xFC )
+		{
+			wc = (s[i] & 0x1) << 30;
+			wc |= (s[i] & 0x3F) << 24;
+			wc |= (s[i] & 0x3F) << 18;
+			wc |= (s[i] & 0x3F) << 12;
+			wc |= (s[i] & 0x3F) << 6;
+			wc |= (s[i] & 0x3F);
+			i += 6;
+		}
+		ws += wc;
+	}
+	return ws;
+}
+
+//---------------------------------------------------------------------------
+
+TQuery::TQuery()
+{
+host = "";
+username= "";
+password= "";
+query= "";
+}
+
+//---------------------------------------------------------------------------
+
+namespace{
+
+bool SetCommand	   		(TCommand *Command,void* Object);
+bool InitializeCommand	(TCommand *Command,void* Object);
+bool QueryCommand 	    (TCommand *Command,void* Object);
+bool SetQueryCommand   	(TCommand *Command,void* Object);
+bool ReadActionCommand 	    (TCommand *Command,void* Object);
+bool ReadQuizCommand 	    (TCommand *Command,void* Object);
+
+//-----------------------------------------------------------------------------
+
+bool SetCommand(TCommand *Command, void *Object)
+{
+int Num;
+CHECK_PARAM_NUM(Num,2)
+TQuery* Query = (TQuery*)Object;
+double value=0;
+value = Command->Param(1)->GetAsNumber();
+
+TVars::const_iterator iter = TCommand::Vars->find(Command->Param(0)->GetAsString());
+	if (iter == TCommand::Vars->end())
+		{
+		TCommand::Vars->insert(std::make_pair(Command->Param(0)->GetAsString(),value));
+		}
+	else
+		TCommand::Vars->operator [](Command->Param(0)->GetAsString()) = value;
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool InitializeCommand	(TCommand *Command,void* Object)
+{  // host, username, password
+int Num;
+CHECK_PARAM_NUM(Num,3)
+TQuery* Query = (TQuery*)Object;
+Query->host = Command->Param(0)->GetAsString();
+Query->username = Command->Param(1)->GetAsString();
+Query->password = Command->Param(2)->GetAsString();
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool ReadQuizCommand	(TCommand *Command,void* Object)
+{
+RETURN_SUCCESS
+}
+//-----------------------------------------------------------------------------
+
+bool ReadActionCommand	(TCommand *Command,void* Object)
+{  // none it write the value to variables
+TQuery* Query = (TQuery*)Object;
+TStringStream* Str;
+TStringStream* Str1;
+TStringStream* Str2;
+Str = new TStringStream;
+Str->SetSize(255);
+char charstr[255];
+
+Str1 = new TStringStream;
+Str1->SetSize(255);
+Str2 = new TStringStream;
+Str2->SetSize(255);
+
+TStringList *Strs;
+Strs = new TStringList;
+
+DataModule2->NetHTTPClient1->Get(L"https://quizone.ru/test/GetId.php",Str);
+UnicodeString ResStr = Str->DataString;
+int CurId;
+
+if (Str!="") Id = StrToInt (ResStr);
+else CurId=1;
+static LastId = 1;
+
+int Answer;
+int Question;
+if (LastId != CurId)   // this is new answer
+	{
+	int Id = LastId+1;
+		if (Id>200) Id=1;
+		sprintf(charstr, "https://quizone.ru/test/GetAnswer.php?q=%d",Id-1);
+		//UnicodeString InStr = (UnicodeString)charstr;
+		DataModule2->NetHTTPClient1->Get(charstr,Str1); // Post(L"http://quizone.ru/test/3.php",Strs,Str);
+		ResStr = Str1->DataString;
+		Answer = StrToInt (ResStr);
+
+		sprintf(charstr, "https://quizone.ru/test/GetQuestion.php?q=%d",Id-1);
+		DataModule2->NetHTTPClient1->Get(charstr,Str2); // Post(L"http://quizone.ru/test/3.php",Strs,Str);
+		ResStr = Str2->DataString;
+		Question = StrToInt (ResStr);
+
+		TCommand::Vars->operator []("ActionQuestion") = Question;// Question;
+		TCommand::Vars->operator []("ActionAnswer") = Answer;
+		TCommand::Vars->operator []("NewAnswer") = 1;
+		LastId = Id;
+	}
+	else
+	{
+	TCommand::Vars->operator []("NewAnswer") = 0;
+	}
+
+RETURN_SUCCESS
+
+//DataModule2->NetHTTPClient1->Get(L"https://quizone.ru/test/GetAnswer.php?q=",Str1); // Post(L"http://quizone.ru/test/3.php",Strs,Str);
+//DataModule2->NetHTTPClient1->Get(L"https://quizone.ru/test/GetQuestion.php",Str2); // Post(L"http://quizone.ru/test/3.php",Strs,Str);
+
+//UnicodeString ResStr = Str1->DataString;
+//int Answer = StrToInt (ResStr);
+
+//ResStr = Str2->DataString;
+//int Question = StrToInt (ResStr);
+
+//static int ans = 1;
+//nt IsNew = 0;
+
+//if (Question!=ans) IsNew = 1;
+//ans = Question;
+
+//if (IsNew == 1) {
+ //	 int t=1;
+//}
+
+
+RETURN_SUCCESS
+
+
+char str[255];
+sprintf(str,"User ID=%s;Password=%s;Data Source=%s",Query->username.c_str() ,Query->password.c_str(),Query->host.c_str());
+try{
+DataModule2->MyConnection1->ConnectString =  str;// L"User ID=foralexon;Password=m23dVwBb4;Data Source=mysql.foralexon.myjino.ru" ;
+if (!DataModule2->MyConnection1->Connected )
+	DataModule2->MyConnection1->Connect();
+if (DataModule2->MyConnection1->Connected )
+	{
+	DataModule2->MyTable1->Connection->Database = L"foralexon";
+	DataModule2->MyTable1->Active = true;
+	int r = DataModule2->MyTable1->FetchRows;
+	int Question = DataModule2->MyTable1->FieldByName(L"Question")->AsInteger;
+	int Answer = DataModule2->MyTable1->FieldByName(L"Answer")->AsInteger;
+
+	if (Question!=0) {
+		char str[255];
+		sprintf(str,"DELETE FROM `foralexon`.`actions` WHERE `Question`= %d LIMIT 1" ,Question);
+		DataModule2->MyCommand1->SQL->Clear();
+		DataModule2->MyCommand1->SQL->Add((UnicodeString)str);
+		DataModule2->MyCommand1->Execute();
+		DataModule2->MyConnection1->Disconnect();
+		TCommand::Vars->operator []("ActionQuestion") = Question;
+		TCommand::Vars->operator []("ActionAnswer") = Answer;
+		TCommand::Vars->operator []("NewAnswer") = 1;
+		}
+
+	RETURN_SUCCESS
+	}
+}
+catch(exception& e)
+	{
+	const char* s = e.what();
+	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+	return false;
+	}
+Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+return false;
+}
+
+//-----------------------------------------------------------------------------
+bool SetQueryCommand	(TCommand *Command,void* Object)
+{
+int Num;
+CHECK_PARAM_NUM(Num,1)
+
+TQuery* Query = (TQuery*)Object;
+TStringStream* Str;
+Str = new TStringStream;
+Str->SetSize(255);
+char charstr[255];
+
+sprintf(charstr, "https://quizone.ru/test/SetQuizId.php?q=%d",Command->Param(0)->GetAsNumber());
+DataModule2->NetHTTPClient1->Get(charstr,Str);
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool QueryCommand	(TCommand *Command,void* Object)
+{  // mysql command
+int Num;
+CHECK_PARAM_NUM(Num,1)
+TQuery* Query = (TQuery*)Object;
+
+AnsiString Str;
+	for (int i=0; i < Command->GetParamCount(); i++) {
+			if (Command->Param(i)->IsNumber())
+				Str = Str + FloatToStr(Command->Param(i)->GetAsNumber());
+			else
+				Str = Str + (AnsiString)(Command->Param(i)->GetAsString().c_str());
+			}
+Query->query = Str.c_str();
+wstring ss = UTF8toUnicode(Query->query);
+
+char str[255];
+sprintf(str,"User ID=%s;Password=%s;Data Source=%s",Query->username.c_str() ,Query->password.c_str(),Query->host.c_str());
+try{
+DataModule2->MyConnection1->ConnectString =  str;// L"User ID=foralexon;Password=m23dVwBb4;Data Source=mysql.foralexon.myjino.ru" ;
+if (!DataModule2->MyConnection1->Connected )
+	DataModule2->MyConnection1->Connect();
+if (DataModule2->MyConnection1->Connected )
+	{
+	Query->query = Command->Param(0)->GetAsString();
+	UnicodeString s = (UnicodeString)Query->query.c_str();
+   DataModule2->MyCommand1->SQL->Clear();
+   DataModule2->MyCommand1->SQL->Add((UnicodeString)ss.c_str());
+   DataModule2->MyCommand1->Execute();
+   DataModule2->MyConnection1->Disconnect();
+	RETURN_SUCCESS
+	}
+}
+catch(exception& e)
+	{
+	const char* s = e.what();
+	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+	return false;
+	}
+Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+return false;
+}
+};
+
+//End of namespace
+//-----------------------------------------------------------------------------
+
+__fastcall TQueryControl::TQueryControl(bool CreateSuspended,TCommandQueue* Commands, TQuery* Query)
+: TCommandExecuter(CreateSuspended,Commands)
+{
+Object = (TQuery*)Query;
+mapCommands.insert(std::make_pair("Set", &SetCommand));
+mapCommands.insert(std::make_pair("Initialize", &InitializeCommand));
+mapCommands.insert(std::make_pair("ReadQuiz", &ReadQuizCommand));
+mapCommands.insert(std::make_pair("ReadAction", &ReadActionCommand));
+mapCommands.insert(std::make_pair("Query", &QueryCommand));
+mapCommands.insert(std::make_pair("SetQuery", &SetQueryCommand));
+}
+//---------------------------------------------------------------------------
+
+__fastcall TQueryControl::~TQueryControl()
+{
+delete Object;
+}
+//---------------------------------------------------------------------------
+
+

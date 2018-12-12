@@ -1,0 +1,481 @@
+//---------------------------------------------------------------------------
+
+#pragma hdrstop
+
+#include "QuizControl.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+
+int minV=0;
+int maxV=0;
+bool elem[255];
+
+void PrepareRandomValues(int _min, int _max)
+{
+minV = _min;
+maxV = _max;
+for (int i = minV; i < maxV; i++) {
+	elem[i] = false;
+	}
+}
+
+bool GetRandomValue(int *res)
+{
+int count=0;
+for (int i = minV; i < maxV; i++) {
+	if (elem[i]) count++;
+	}
+if (count>=maxV-minV) return false;
+
+do{
+*res = random(maxV-minV);
+*res = *res + minV;
+}
+while (elem[*res]==true);
+elem[*res]=true;
+return true;
+}
+
+
+//----------------------------
+
+TLinearMotion::TLinearMotion(double InitialValue)
+{
+this->Current = InitialValue;
+this->Target = InitialValue;
+this->Rate = 0;
+this->StartTime = 0;
+}
+
+//----------------------------
+
+void TLinearMotion::Set(double Target, double Rate)
+{
+this->Target = Target;
+this->StartTime = GETTICKS()
+this->Rate = Rate;
+}
+
+//----------------------------
+double TLinearMotion::Update(unsigned long duration)
+{
+double newValue = Current + duration * Rate;
+StartTime = StartTime + duration;
+Current = (Rate>=0 ? ( newValue > Target ?  Target : newValue) : ( newValue<Target ? Target : newValue));
+return Current;
+}
+
+//----------------------------
+
+//TItem::TItem()
+//{
+  //	Opacity(1);
+//	Scale = 1;
+//	AddNumber = true;
+//}
+
+TQuiz::TQuiz()
+{
+NumItems = 0;
+Items=NULL;
+Sequence = NULL;
+TransitionTime = 1;
+Acc = 1;
+LabelOpacity = 0;
+LabelOpacityStartingTime = 0;
+LabelTargetOpacity = 0;
+Items = new TItem [255];
+Sequence = new int[255];
+}
+
+namespace{
+
+bool SetLabelOpacityCommand		(TCommand *Command,void* Object);
+bool SetCommand	   		(TCommand *Command,void* Object);
+bool InitializeCommand	(TCommand *Command,void* Object);
+bool LoadImageCommand	(TCommand *Command,void* Object);
+bool SetPathCommand		(TCommand *Command,void* Object);
+bool SetModelCommand	(TCommand *Command,void* Object);
+bool SetLabelCommand	(TCommand *Command,void* Object);
+bool SetRateCommand		(TCommand *Command,void* Object);
+bool OpacityCommand	   	(TCommand *Command,void* Object);
+bool RandomizeCommand 	(TCommand *Command,void* Object);
+bool SetScaleCommand 	(TCommand *Command,void* Object);
+bool SetItemLabelCommand 	(TCommand *Command,void* Object);
+
+
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+
+bool SetCommand(TCommand *Command, void *Object)
+{
+int Num;
+CHECK_PARAM_NUM(Num,2)
+if (Command->Param(0)->IsNumber()==false ) {
+	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::WRONG_PARAMETER_VALUE));
+	return false;
+	}
+TQuiz* Quiz = (TQuiz*)Object;
+
+if (Command->Param(1)->IsString())
+	{
+	string value="";
+	value = Command->Param(1)->GetAsString();
+	TStringVars::const_iterator iter = TCommand::StringVars->find(Command->Param(0)->GetAsString(false));
+	if (iter == TCommand::StringVars->end())
+		{
+		TCommand::StringVars->insert(std::make_pair(Command->Param(0)->GetAsString(false),value));
+		}
+	else
+		TCommand::StringVars->operator [](Command->Param(0)->GetAsString(false)) = value;
+	}
+else
+	{
+	double value=0;
+	value = Command->Param(1)->GetAsNumber();
+	TVars::const_iterator iter = TCommand::Vars->find(Command->Param(0)->GetAsString(false));
+	if (iter == TCommand::Vars->end())
+		{
+		TCommand::Vars->insert(std::make_pair(Command->Param(0)->GetAsString(false),value));
+		}
+	else
+		TCommand::Vars->operator [](Command->Param(0)->GetAsString(false)) = value;
+	}
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool InitializeCommand	(TCommand *Command,void* Object)
+{  // number of items, model, rate , acc, transition time
+int Num;
+CHECK_PARAM_NUM(Num,3)
+CHECK_VAR_RANGE(Command->Param(0)->GetAsNumber(),1,100)
+TQuiz* Quiz = (TQuiz*)Object;
+
+//if (Quiz->Items != Null) delete [] Quiz->Items;
+Quiz->NumItems = Command->Param(0)->GetAsNumber();
+//Quiz->Items = new TItem [Quiz->NumItems];
+//Quiz->Sequence = new int[Quiz->NumItems];
+
+for (int i=0; i < Quiz->NumItems; i++) {
+	Quiz->Items[i].Reload = false;
+	Quiz->Sequence[i] = i;
+	}
+Quiz->InitialTime = GETTICKS()
+Quiz->Model = Command->Param(1)->GetAsNumber();
+Quiz->Rate = Command->Param(2)->GetAsNumber();
+if (Command->GetParamCount()>3) Quiz->Acc = Command->Param(3)->GetAsNumber();
+if (Command->GetParamCount()>4) Quiz->TransitionTime = Command->Param(4)->GetAsNumber();
+
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool LoadImageCommand	(TCommand *Command,void* Object)
+{  // id, file name , SizeX, SizeY   , optional (add number id to the image)
+int Num;
+CHECK_PARAM_NUM(Num,2)
+TQuiz* Quiz = (TQuiz*)Object;
+CHECK_VAR_RANGE(Command->Param(0)->GetAsNumber(),0,Quiz->NumItems-1)
+Quiz->Items[(int)Command->Param(0)->GetAsNumber()].FileName = Command->Param(1)->GetAsString();
+double SizeX = 1;
+double SizeY = 1;
+if (Command->GetParamCount()>2) SizeX = Command->Param(2)->GetAsNumber();
+if (Command->GetParamCount()>3) SizeY = Command->Param(3)->GetAsNumber();
+	Quiz->Items[(int)Command->Param(0)->GetAsNumber()].SizeY = SizeX;
+	Quiz->Items[(int)Command->Param(0)->GetAsNumber()].SizeX = SizeY;
+Quiz->Items[(int)Command->Param(0)->GetAsNumber()].Reload = true;
+if (Command->GetParamCount()>4) Quiz->Items[(int)Command->Param(0)->GetAsNumber()].AddNumber = Command->Param(4)->GetAsNumber();
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool SetPathCommand		(TCommand *Command,void* Object)
+{  // path
+int Num;
+CHECK_PARAM_NUM(Num,1)
+TQuiz* Quiz = (TQuiz*)Object;
+Quiz->Path = Command->Param(0)->GetAsString();
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool SetModelCommand	(TCommand *Command,void* Object)
+{ // mode number
+TQuiz* Quiz = (TQuiz*)Object;
+Quiz->Model = Command->Param(0)->GetAsNumber();
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool SetRateCommand		(TCommand *Command,void* Object)
+{ // rate value
+TQuiz* Quiz = (TQuiz*)Object;
+Quiz->Rate = Command->Param(0)->GetAsNumber();
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool OpacityCommand	   	(TCommand *Command,void* Object)
+{ // opacity - for all  , duration
+// id, opacity , duration
+int Num;
+CHECK_PARAM_NUM(Num,2)
+TQuiz* Quiz = (TQuiz*)Object;
+int id;
+double Target,Duration;
+if (Command->GetParamCount()==2) {
+	CHECK_VAR_RANGE(Command->Param(0)->GetAsNumber(),0,1)
+	READ_VAR_FROM_PARAM(0,Target)
+	READ_VAR_FROM_PARAM(1,Duration)
+	for (int i = 0; i < Quiz->NumItems; i++) {
+		if (Duration ==0) Quiz->Items[i].Image.Opacity.Set(Target);
+		else Quiz->Items[i].Image.Opacity.Set(Target, (Target - Quiz->Items[i].Image.Opacity.GetCurrent() ) / Duration / 1000.0);
+		}
+	}
+else{
+	CHECK_VAR_RANGE(Command->Param(1)->GetAsNumber(),0,1)
+	CHECK_VAR_RANGE(Command->Param(0)->GetAsNumber(),1,Quiz->NumItems)
+	READ_VAR_FROM_PARAM(0,id)
+	READ_VAR_FROM_PARAM(1,Target)
+	READ_VAR_FROM_PARAM(2,Duration)
+	if (Duration ==0) Quiz->Items[id].Image.Opacity.Set (Target);
+	else Quiz->Items[id].Image.Opacity.Set(Target, (Target - Quiz->Items[id].Image.Opacity.GetCurrent()) / Duration / 1000.0);
+	}
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool SetItemLabelCommand	   	(TCommand *Command,void* Object)
+{ // id, label, posX, poxY, SizeX, SizeY, Opacity, color, duration
+int Num;
+CHECK_PARAM_NUM(Num,9)
+TQuiz* Quiz = (TQuiz*)Object;
+int id;
+string Caption;
+string color;
+double PosXTarget,PosYTarget, SizeXTarget, SizeYTarget, OpacityTarget, Duration;
+	CHECK_VAR_RANGE(Command->Param(0)->GetAsNumber(),0,1)
+	READ_VAR_FROM_PARAM(0,id)
+	Caption = Command->Param(1)->GetAsString();
+	READ_VAR_FROM_PARAM(2,PosXTarget)
+	READ_VAR_FROM_PARAM(3,PosYTarget)
+	READ_VAR_FROM_PARAM(4,SizeXTarget)
+	READ_VAR_FROM_PARAM(5,SizeYTarget)
+	READ_VAR_FROM_PARAM(6,OpacityTarget)
+	color = Command->Param(7)->GetAsString();
+	READ_VAR_FROM_PARAM(8,Duration)
+	Quiz->Items[id].Label.Caption = Caption;
+	Quiz->Items[id].Label.Color = color;
+	if (Duration ==0)
+		{
+		 Quiz->Items[id].Label.PosX.Set(PosXTarget);
+		 Quiz->Items[id].Label.PosY.Set(PosYTarget);
+		 Quiz->Items[id].Label.ScaleX.Set(SizeXTarget);
+		 Quiz->Items[id].Label.ScaleY.Set(SizeYTarget);
+		 Quiz->Items[id].Label.Opacity.Set(OpacityTarget);
+		}
+	else
+		{
+		 Quiz->Items[id].Label.PosX.Set(PosXTarget, (PosXTarget - Quiz->Items[id].Label.PosX.GetCurrent()) / Duration / 1000.0);
+		 Quiz->Items[id].Label.PosY.Set(PosYTarget, (PosYTarget - Quiz->Items[id].Label.PosY.GetCurrent()) / Duration / 1000.0);
+		 Quiz->Items[id].Label.ScaleX.Set(SizeXTarget ,(SizeXTarget - Quiz->Items[id].Label.ScaleX.GetCurrent()) / Duration / 1000.0);
+		 Quiz->Items[id].Label.ScaleY.Set(SizeYTarget ,(SizeYTarget - Quiz->Items[id].Label.ScaleY.GetCurrent()) / Duration / 1000.0);
+		 Quiz->Items[id].Label.Opacity.Set(OpacityTarget , (OpacityTarget - Quiz->Items[id].Label.Opacity.GetCurrent()) / Duration / 1000.0);
+		}
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool SetLabelCommand		(TCommand *Command,void* Object)
+{ // Label
+int Num;
+CHECK_PARAM_NUM(Num,1)
+TQuiz* Quiz = (TQuiz*)Object;
+Quiz->Label = Command->Param(0)->GetAsString();
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool SetLabelOpacityCommand		(TCommand *Command,void* Object)
+{ // opacity , duration
+int Num;
+CHECK_PARAM_NUM(Num,2)
+CHECK_VAR_RANGE(Command->Param(0)->GetAsNumber(),0,1)
+TQuiz* Quiz = (TQuiz*)Object;
+Quiz->LabelTargetOpacity = Command->Param(0)->GetAsNumber();
+Quiz->LabelOpacityStartingTime = GETTICKS()
+if (Command->Param(1)->GetAsNumber() ==0) Quiz->LabelOpacityChangeRate = 100;
+		else Quiz->LabelOpacityChangeRate = (Quiz->LabelTargetOpacity - Quiz->LabelOpacity) / Command->Param(1)->GetAsNumber();
+
+RETURN_SUCCESS
+}
+
+
+//-----------------------------------------------------------------------------
+
+bool SetScaleCommand		(TCommand *Command,void* Object)
+{ // id , scale
+int Num;
+CHECK_PARAM_NUM(Num,2)
+CHECK_VAR_RANGE(Command->Param(0)->GetAsNumber(),1,100)
+TQuiz* Quiz = (TQuiz*)Object;
+//for (int i = 0; i < Quiz->NumItems; i++) {
+	Quiz->Items[(int)Command->Param(0)->GetAsNumber()].Scale = Command->Param(1)->GetAsNumber() ;
+//}
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool RandomizeCommand 	(TCommand *Command,void* Object)
+{ // none
+TQuiz* Quiz = (TQuiz*)Object;
+
+PrepareRandomValues(0,Quiz->NumItems);
+for (int i = 0; i < Quiz->NumItems ; i++) {
+	int cur;
+	GetRandomValue(&cur);
+	Quiz->Sequence[i] = cur;
+	}
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+};
+
+//End of namespace
+
+//-----------------------------------------------------------------------------
+
+__fastcall TQuizControl::TQuizControl(bool CreateSuspended,TCommandQueue* Commands, TQuiz* Quiz)
+: TCommandExecuter(CreateSuspended,Commands)
+{
+Object = (TQuiz*)Quiz;
+
+mapCommands.insert(std::make_pair("Set", &SetCommand));
+mapCommands.insert(std::make_pair("Initialize", &InitializeCommand));
+mapCommands.insert(std::make_pair("LoadImage", &LoadImageCommand));
+mapCommands.insert(std::make_pair("SetModel", &SetModelCommand));
+mapCommands.insert(std::make_pair("SetRate", &SetModelCommand));
+mapCommands.insert(std::make_pair("Opacity", &OpacityCommand));
+mapCommands.insert(std::make_pair("SetScale", &SetScaleCommand));
+mapCommands.insert(std::make_pair("Randomize", &RandomizeCommand));
+mapCommands.insert(std::make_pair("SetPath", &SetPathCommand));
+mapCommands.insert(std::make_pair("SetLabel", &SetLabelCommand));
+mapCommands.insert(std::make_pair("SetLabelOpacity", &SetLabelOpacityCommand));
+mapCommands.insert(std::make_pair("SetItemLabel", &SetItemLabelCommand));
+
+
+
+}
+//---------------------------------------------------------------------------
+
+__fastcall TQuizControl::~TQuizControl()
+{
+delete Object;
+}
+//---------------------------------------------------------------------------
+
+void TQuizControl::PostCommandHandler(TCommand * Command)
+{
+//TQuiz* Quiz = (TQuiz*)Object;
+}
+
+//---------------------------------------------------------------------------
+
+void TQuizControl::HandleIdle()
+{
+TQuiz* Quiz = (TQuiz*)Object;
+int Raws = 2;
+int Coloumns = 3;
+while (Raws*Coloumns<Quiz->NumItems) {Coloumns++; Raws = Coloumns*2/3;}
+
+double Duration =  PreviousTicks - LastCycleTicks;
+for (int i = 0; i < Quiz->NumItems ; i++)
+	{
+	Quiz->Items[i].Image.Opacity.Update(Duration);
+	Quiz->Items[i].Label.PosX.Update(Duration);
+	Quiz->Items[i].Label.PosY.Update(Duration);
+	Quiz->Items[i].Label.ScaleX.Update(Duration);
+	Quiz->Items[i].Label.ScaleY.Update(Duration);
+	Quiz->Items[i].Label.Opacity.Update(Duration);
+	}
+
+
+unsigned long CurrentTime = GETTICKS()
+
+unsigned long LabelOpacityTime = CurrentTime - Quiz->LabelOpacityStartingTime;
+Quiz->LabelOpacityStartingTime = CurrentTime;
+double newValue = Quiz->LabelOpacity + LabelOpacityTime / 1000.0 * Quiz->LabelOpacityChangeRate;
+Quiz->LabelOpacity = Quiz->LabelOpacityChangeRate>=0 ? ( newValue > Quiz->LabelTargetOpacity ?  Quiz->LabelTargetOpacity : newValue) : ( newValue<Quiz->LabelTargetOpacity ? Quiz->LabelTargetOpacity : newValue);
+
+unsigned long TimePass = CurrentTime - Quiz->InitialTime;
+
+double* AbsPos = new double [Quiz->NumItems];
+for (int i = 0; i < Quiz->NumItems ; i++) {
+	int cur = Quiz->Sequence[i];
+	AbsPos[cur] = (double)i / Quiz->NumItems;
+	AbsPos[cur] = AbsPos[cur] + Quiz->Rate * TimePass / 1000.0;
+	AbsPos[cur] = AbsPos[cur] - int(AbsPos[cur]);
+   }
+
+switch (Quiz->Model) {
+case 1:
+	for (int i = 0; i < Quiz->NumItems ; i++) {
+		   AbsPos[i] = AbsPos[i] * Raws;
+		   Quiz->Items[i].PosX = AbsPos[i] - int(AbsPos[i]);
+		   Quiz->Items[i].PosY = (int(AbsPos[i])) / (double)Raws;
+		}
+	break;
+case 2:
+		for (int i = 0; i < Quiz->NumItems ; i++) {
+		   double divider = 0.2;
+		   if (AbsPos[i]<divider) {
+					Quiz->Items[i].PosX = 0.9 * AbsPos[i] / divider ;
+					Quiz->Items[i].PosY = 0;
+					}
+		   else if (AbsPos[i]<1.5*divider)
+					{
+					Quiz->Items[i].PosX = 0.9 ;
+					Quiz->Items[i].PosY = 0.7 * (AbsPos[i] - divider) / divider ;
+					}
+		   else if (AbsPos[i]<3*divider)
+					{
+					Quiz->Items[i].PosX = 0.9 * (3*divider - AbsPos[i]) / divider ;
+					Quiz->Items[i].PosY = 0.7;
+					}
+		   else if (AbsPos[i]<3.4*divider)
+					{
+					Quiz->Items[i].PosX = 0 ;
+					Quiz->Items[i].PosY = 0.7* (4*divider - AbsPos[i]) / divider ;
+					}
+		   else 	{
+					Quiz->Items[i].PosX = 0.4* (AbsPos[i] - 3.4*divider) / divider ;  ;
+					Quiz->Items[i].PosY = 0.3;
+					}
+
+		   }
+	break;
+default:
+	break;
+
+}
+delete [] AbsPos;
+}
+
+//---------------------------------------------------------------------------
+
+

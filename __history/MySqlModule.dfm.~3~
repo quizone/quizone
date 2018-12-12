@@ -1,0 +1,25 @@
+object DataModule2: TDataModule2
+  OldCreateOrder = False
+  Height = 397
+  Width = 518
+  object MyConnection1: TMyConnection
+    Database = 'foralexon'
+    Left = 96
+    Top = 144
+  end
+  object MyCommand1: TMyCommand
+    Connection = MyConnection1
+    SQL.Strings = (
+      
+        'INSERT INTO `foralexon`.`02` (`id`, `Question`, `Hint`) VALUES (' +
+        #39'2'#39', '#39'South Africa'#39', '#39'Has another country inside it'#39');')
+    Left = 128
+    Top = 216
+  end
+  object MyTable1: TMyTable
+    TableName = 'Quizes'
+    Connection = MyConnection1
+    Left = 184
+    Top = 144
+  end
+end

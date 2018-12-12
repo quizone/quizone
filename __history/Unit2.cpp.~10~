@@ -1,0 +1,184 @@
+//---------------------------------------------------------------------------
+
+#include <fmx.h>
+#pragma hdrstop
+
+#include "Unit2.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.fmx"
+TForm2 *Form2;
+//---------------------------------------------------------------------------
+__fastcall TForm2::TForm2(TComponent* Owner)
+	: TForm(Owner)
+{
+//Form2->Top = 0;
+//Form2->Left=1920;
+//Form2->Width = 1000;
+//Form2->Height = 1030;
+//Form2->FullScreen = true;
+//Form2->Close();
+Form2->Show();
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm2::FormCreate(TObject *Sender)
+{
+Images = new TImage*[255];
+Labels = new TLabel*[255];
+MotionsX = new TAxisMotion[255];
+MotionsY = new TAxisMotion[255];
+LastX = new double[255];
+LastY = new double[255];
+for (int i=0; i < 255; i++) {
+	Images[i] = new TImage(Form2);
+	Labels[i] = new TLabel(Form2);
+	Images[i]->Parent = Form2;
+	Labels[i]->Parent = Form2;
+	MotionsX[i].SetImmediateTarget(0,0,false);
+	MotionsY[i].SetImmediateTarget(0,0,false);
+	}
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm2::Timer1Timer(TObject *Sender)
+{
+static TCommand *Command=NULL;
+int Code;
+string Msg;
+while (Form1->MC->ReportCommands->GetCommand(Command))
+	{
+	while (Form1->MC->ReportCommands->GetResult(Command))
+	 {
+	if (Command->GetResult(&Code,&Msg))
+		{
+		if (Command->GetResult(&Code,&Msg))
+		if (Code!=COMMAND::SUCCESS) {
+			//Logging.AddLog(Msg,Command->GetCommandString(),0);
+			}
+		AnsiString Str = (AnsiString)((AnsiString)(Msg.c_str()) + " " + Command->GetCommandString().c_str());
+		if (CheckBox1->IsChecked) {
+		Memo1->Lines->Add(Str.c_str());
+			}
+		}
+	 }
+  	}
+while (Form1->MC->UICommands->GetCommand(Command))
+	{
+	if (Command->GetCommandName()=="Msg") {
+		if (Command->GetParamCount()>0) {
+			if (Command->Param(0)->IsNumber())
+			   ShowMessage((AnsiString)Command->Param(0)->GetAsNumber());
+			else
+			   ShowMessage((AnsiString)Command->Param(0)->GetAsString().c_str());
+			Command->InsertResult(COMMAND::SUCCESS,COMMAND::CommandErrorString[COMMAND::SUCCESS]);
+			}
+		else
+		Command->InsertResult(COMMAND::TOO_FEW_PARAMETERS,COMMAND::CommandErrorString[COMMAND::TOO_FEW_PARAMETERS]);
+		}
+
+	}
+
+
+return;
+int TotalWidth = Form1->TotalWidth;
+int StartWidth = 2000;
+int ThisWidth = 1080;
+TQuiz* Quiz = (TQuiz*)Form1->MC->QuizControl->GetObject();
+/*
+for (int i=0; i < Quiz->NumItems; i++) {
+		if (Quiz->Items[i].Reload) {
+			string str = Quiz->Path;
+			str = str + Quiz->Items[i].FileName;
+			Images[i]->Bitmap->LoadFromFile(str.c_str());
+			Quiz->Items[i].Reload = false;
+			}
+		}
+	   */
+for (int i=0; i < Quiz->NumItems; i++) {
+	Images[i]->Bitmap = Form1->Images[i]->Bitmap;
+}
+
+for (int i=Quiz->NumItems; i < 255; i++) {
+	Images[i]->Opacity =0 ; // Bitmap->Clear(0);
+	Labels[i]->Opacity = 0;
+	}
+for (int i=0; i < Quiz->NumItems; i++) {
+
+	double SpeedX = MotionsX[i].GetSpeed(Timer1->Interval/1000.0);
+	double SpeedY = MotionsY[i].GetSpeed(Timer1->Interval/1000.0);
+
+	LastX[i] = MotionsX[i].GetPosition(Timer1->Interval/1000.0);
+	LastY[i] = MotionsY[i].GetPosition(Timer1->Interval/1000.0);
+
+	MotionsX[i].SetTargetDuration(LastX[i],0,Quiz->Items[i].PosX,SpeedX,Quiz->TransitionTime,Quiz->Acc,false);
+	MotionsY[i].SetTargetDuration(LastY[i],0,Quiz->Items[i].PosY,SpeedY,Quiz->TransitionTime,Quiz->Acc,false);
+
+	double X = MotionsX[i].GetPosition(Timer1->Interval/1000.0);
+	double Y = MotionsY[i].GetPosition(Timer1->Interval/1000.0);
+
+	Images[i]->Position->X = X * (TotalWidth-150);
+
+	Images[i]->Position->X = Images[i]->Position->X - StartWidth;
+
+
+//	if (Images[i]->Position->X <400) Images[i]->Position->X += 400;
+
+	//if (Images[i]->Position->X > TotalWidth-250) Images[i]->Opacity = (TotalWidth- Images[i]->Position->X -150) /100.0;
+	//else if (Images[i]->Position->X < 100)
+	//	Images[i]->Opacity = (Images[i]->Position->X) /100.0;
+	//else Images[i]->Opacity = 1;
+
+	//if (Quiz->Items[i].PosX * (TotalWidth-150) > TotalWidth-250) Images[i]->Opacity = (TotalWidth- Quiz->Items[i].PosX * (TotalWidth-150) -150) /100.0;
+	//else if (Quiz->Items[i].PosX * (TotalWidth-150) < 400) Images[i]->Opacity = 0;
+	//	Images[i]->Opacity = (Quiz->Items[i].PosX)* (TotalWidth-150) /100.0;
+	//else Images[i]->Opacity = 1;
+
+	//Images[i]->Opacity = Images[i]->Opacity.GetCurrent * Quiz->Items[i].Opacity;
+	//Images[i]->Scale->X = Images[i]->Scale->X * Quiz->Items[i].Scale;
+	//Images[i]->Scale->Y = Images[i]->Scale->Y * Quiz->Items[i].Scale;
+
+	Images[i]->Position->Y = Y * Form2->Height;
+	Images[i]->Scale->X = Quiz->Items[i].SizeX * Quiz->Items[i].Scale;
+	Images[i]->Scale->Y = Quiz->Items[i].SizeY * Quiz->Items[i].Scale;
+
+	Labels[i]->Position->X = Images[i]->Position->X + (Images[i]->Width*Images[i]->Scale->X) /2.0 ;
+	Labels[i]->Position->Y = Images[i]->Position->Y + (Images[i]->Height*Images[i]->Scale->Y)/3.0;
+
+	Labels[i]->Scale->X = 10;//Images[i]->Scale->X;
+	Labels[i]->Scale->Y = 10;//Images[i]->Scale->Y;
+
+	Labels[i]->FontColor = 0x4455ff;
+	Labels[i]->Text = i+1;
+
+	if (Quiz->Items[i].AddNumber == true) {
+					 Labels[i]->Opacity = 0.6;
+		}
+	else
+		{
+			Labels[i]->Opacity = 0.0;
+		}
+
+
+	}
+}
+
+//---------------------------------------------------------------------------
+void __fastcall TForm2::FormKeyDown(TObject *Sender, WORD &Key, System::WideChar &KeyChar,
+		  TShiftState Shift)
+{
+static double SizeX = 1;
+static int ScriptId = 1;
+if (Key==39) {
+	ScriptId++;
+	char str[255];
+	sprintf(str,"Script.RunScript,%d",ScriptId);
+	Form1->MC->Commands->CreateCommand(str);
+}
+if (Key==37) {
+	ScriptId--;
+	char str[255];
+	sprintf(str,"Script.RunScript,%d",ScriptId);
+	Form1->MC->Commands->CreateCommand(str);
+}
+
+}
+//---------------------------------------------------------------------------

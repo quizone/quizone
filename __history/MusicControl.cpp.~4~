@@ -1,0 +1,111 @@
+//---------------------------------------------------------------------------
+
+#pragma hdrstop
+
+#include "MusicControl.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+
+//---------------------------------------------------------------------------
+
+
+TMusic::TMusic()
+{
+filename= "";
+path= "";
+}
+
+//---------------------------------------------------------------------------
+
+namespace{
+
+bool SetCommand	   		(TCommand *Command,void* Object);
+bool InitializeCommand	(TCommand *Command,void* Object);
+bool PlayCommand	(TCommand *Command,void* Object);
+bool StopCommand	(TCommand *Command,void* Object);
+
+
+//-----------------------------------------------------------------------------
+
+bool SetCommand(TCommand *Command, void *Object)
+{
+int Num;
+CHECK_PARAM_NUM(Num,2)
+TMusic* Music = (TMusic*)Object;
+double value=0;
+value = Command->Param(1)->GetAsNumber();
+
+TVars::const_iterator iter = TCommand::Vars->find(Command->Param(0)->GetAsString());
+	if (iter == TCommand::Vars->end())
+		{
+		TCommand::Vars->insert(std::make_pair(Command->Param(0)->GetAsString(),value));
+		}
+	else
+		TCommand::Vars->operator [](Command->Param(0)->GetAsString()) = value;
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool InitializeCommand	(TCommand *Command,void* Object)
+{  // path
+int Num;
+CHECK_PARAM_NUM(Num,1)
+TMusic* Music = (TMusic*)Object;
+Music->path = Command->Param(0)->GetAsString();
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool PlayCommand	(TCommand *Command,void* Object)
+{  // id
+int Num;
+CHECK_PARAM_NUM(Num,1)
+TMusic* Music = (TMusic*)Object;
+//Music->filename = Command->Param(0)->GetAsString();
+Music->id = Command->Param(0)->GetAsNumber();
+
+//DataModule2->MediaPlayer1->Media- FileName = (UnicodeString)Music->filename.c_str();
+
+if (Music->id ==1) {DataModule2->MediaPlayer1->CurrentTime = 0; DataModule2->MediaPlayer1->Play(); }
+if (Music->id ==2) {DataModule2->MediaPlayer2->CurrentTime = 0; DataModule2->MediaPlayer2->Play(); }
+
+
+
+//DataModule2->MediaPlayer1->Stop();
+//DataModule2->MediaPlayer1->FileName = (UnicodeString)Music->path.c_str() + (UnicodeString)Music->filename.c_str();
+//DataModule2->MediaPlayer1->Play();
+RETURN_SUCCESS
+}
+//-----------------------------------------------------------------------------
+
+bool StopCommand	(TCommand *Command,void* Object)
+{
+RETURN_SUCCESS
+}
+//-----------------------------------------------------------------------------
+
+};
+
+//End of namespace
+//-----------------------------------------------------------------------------
+
+__fastcall TMusicControl::TMusicControl(bool CreateSuspended,TCommandQueue* Commands, TMusic* Music)
+: TCommandExecuter(CreateSuspended,Commands)
+{
+Object = (TMusic*)Music;
+mapCommands.insert(std::make_pair("Set", &SetCommand));
+mapCommands.insert(std::make_pair("Initialize", &InitializeCommand));
+mapCommands.insert(std::make_pair("Play", &PlayCommand));
+mapCommands.insert(std::make_pair("Stop", &StopCommand));
+
+}
+//---------------------------------------------------------------------------
+
+__fastcall TMusicControl::~TMusicControl()
+{
+delete Object;
+}
+//---------------------------------------------------------------------------
+

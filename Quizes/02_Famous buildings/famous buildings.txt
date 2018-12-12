@@ -1,0 +1,50 @@
+01,The Empire State Building
+02,Taj Mahal
+03,Colosseum
+04,Leaning Tower of Pisa
+05,Burj Khalifa
+06,Chrysler Building
+07,Eiffel Tower
+08,Sydney Opera House
+09,Pantheon
+10,Fallingwater
+11,Solomon R. Guggenheim Museum
+12,Hagia Sophia
+13,One World Trade Center
+14,St Paul's Cathedral
+15,Willis Tower
+16,White House
+17,Parthenon
+18,Space Needle
+19,Guggenheim Museum, Bilbao
+20,Buckingham Palace
+21,Flatiron Building
+22,Saint Basil's Cathedral
+23,Forbidden City
+24,Sagrada Família
+25,St. Peter's Basilica
+26,Palace of Versailles
+27,The Shard
+28,Angkor Wat
+29,Big Ben
+30,30 St Mary Axe
+31,Casa Milà
+32,Villa Savoye
+33,Florence Cathedral
+34,Louvre Museum
+35,Burj Al Arab Jumeirah
+36,Great Pyramid of Giza
+37,Notre-Dame de Paris
+38,Cologne Cathedral
+39,Westminster Abbey
+40,The Venetian
+41,United States Capitol
+42,Taipei 101
+43,Washington Monument
+44,Dome of the Rock
+45,Lotus Temple
+46,Sistine Chapel
+47,Moscow Kremlin
+48,CN Tower
+49,Sultan Ahmed Mosque
+

@@ -1,0 +1,98 @@
+//---------------------------------------------------------------------------
+
+#ifndef CommandExecuterH
+#define CommandExecuterH
+//---------------------------------------------------------------------------
+
+#include <System.Classes.hpp>
+#include <map>
+#include <string>
+
+#include "commandqueue.h"
+
+#ifndef _WIN32
+#define CALCTICKS() TDateTime tt= Now();  \
+	unsigned short h,m,s,ms;        \
+	tt.DecodeTime(&h,&m,&s,&ms);    \
+	unsigned long t = h*60*60 + m*60 + s;  \
+
+#define GETTICKS() t*1000 + ms;
+#endif
+
+#ifdef _WIN32
+#define CALCTICKS() ;
+#define GETTICKS() GetTickCount();
+#endif
+
+#define READ_VAR_FROM_PARAM(PNUM,VAR) \
+	VAR=Command->Param(PNUM)->GetAsNumber(); \
+
+#define CHECK_VAR_RANGE(VAR,MIN,MAX)   \
+if ((VAR<MIN) || (VAR>MAX)){             \
+	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::OUT_OF_RANGE)); \
+	return false;                                                        \
+	}
+
+#define CHECK_PARAM_NUM(VAR,MIN)         \
+VAR = Command->GetParamCount();    \
+if (VAR<MIN ) {  \
+	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::TOO_FEW_PARAMETERS));  \
+	return false;                                                                 \
+	}
+
+#define RETURN_SUCCESS   \
+Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::SUCCESS));      \
+return true;
+
+#define RETURN_FAIL   \
+Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::UNKNOWN));    \
+return false;
+
+#define NORMALIZE(Variable,Module) \
+	Variable=(Variable-(int)Variable+(int)(Variable)%(Module)); Variable=Variable/(Module.0);
+
+typedef bool (*CommandFunction)(TCommand *Command, void *Object); // function pointer type
+typedef std::map<std::string, CommandFunction> TmapCommands;
+
+
+//---------------------------------------------------------------------------
+
+class TCommandExecuter : public TThread
+{
+private:
+bool Terminated;
+bool IsPaused;
+bool IsStopped;
+
+
+protected:
+unsigned long StartTicks;
+unsigned long RunningTicks;
+unsigned long PausingTicks;
+unsigned long PreviousTicks;
+unsigned long CurrentTicks;
+
+void *Object;
+int detectme;
+TmapCommands mapCommands;
+
+	void __fastcall Execute();
+	virtual bool HandleCommand(TCommand* Command) {return false;};
+	virtual void HandleIdle() {};
+	virtual void PostCommandHandler(TCommand * Command) {};
+	virtual bool PreCommandHandler(TCommand * Command) {return true;};
+public:
+	void* GetObject() {return Object;};
+	TCommandQueue* Commands;
+	__fastcall TCommandExecuter(bool CreateSuspended,TCommandQueue* Commands);
+	bool GetPaused() {return IsPaused;};
+	bool GetStopped() {return IsStopped;};
+	void Terminate();
+	bool Stop();
+	bool Pause();
+	bool Start();
+};
+
+//---------------------------------------------------------------------------
+
+#endif

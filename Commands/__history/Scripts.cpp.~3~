@@ -1,0 +1,323 @@
+//---------------------------------------------------------------------------
+
+#pragma hdrstop
+
+#include "Scripts.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+
+int TScripts::ScriptCount=0;
+
+namespace{
+bool EndCommand			 	    (TCommand *Command, void *Object);
+bool RestartCommand		 		(TCommand *Command, void *Object);
+bool IfEndCommand               (TCommand *Command, void *Object);
+bool IfRestartCommand           (TCommand *Command, void *Object);
+bool IfCommand	    	        (TCommand *Command, void *Object);
+bool IfSucceedCommand  	        (TCommand *Command, void *Object);
+bool RepeatCommand              (TCommand *Command, void *Object);
+bool IfGreaterCommand  	        (TCommand *Command, void *Object);
+bool IfLesserCommand   	        (TCommand *Command, void *Object);
+bool IfGreaterRestartCommand    (TCommand *Command, void *Object);
+bool IfGreaterEndCommand  	    (TCommand *Command, void *Object);
+bool IfLesserRestartCommand     (TCommand *Command, void *Object);
+bool IfLesserEndCommand   	    (TCommand *Command, void *Object);
+
+//----------------------------------------------------------
+
+bool EndCommand		(TCommand *Command, void *Object)
+{
+TScripts* Script = (TScripts*)Object;
+Script->Stop();
+RETURN_SUCCESS
+}
+
+//----------------------------------------------------------
+
+bool RestartCommand	(TCommand *Command, void *Object)
+{
+TScripts* Script = (TScripts*)Object;
+Script->Stop();
+Script->Start();
+RETURN_SUCCESS
+}
+
+//----------------------------------------------------------
+
+bool IfEndCommand               (TCommand *Command, void *Object)
+{
+TScripts* Script = (TScripts*)Object;
+int Num;
+CHECK_PARAM_NUM(Num,2)
+if (Command->Param(0)->GetAsNumber()==Command->Param(1)->GetAsNumber()) {
+		  Script->Stop();
+		}
+RETURN_SUCCESS
+}
+
+//----------------------------------------------------------
+
+bool IfRestartCommand           (TCommand *Command, void *Object)
+{
+TScripts* Script = (TScripts*)Object;
+int Num;
+CHECK_PARAM_NUM(Num,2)
+if (Command->Param(0)->GetAsNumber()==Command->Param(1)->GetAsNumber()) {
+	Script->Stop();
+	Script->Start();
+	}
+RETURN_SUCCESS
+}
+
+//----------------------------------------------------------
+
+bool IfCommand           (TCommand *Command, void *Object)
+{
+TScripts* Script = (TScripts*)Object;
+int Num;
+CHECK_PARAM_NUM(Num,3)
+if (Command->Param(0)->GetAsNumber()==Command->Param(1)->GetAsNumber()) {
+	Script->ForwardCommand(Command->Param(2)->GetAsString());
+	}
+RETURN_SUCCESS
+}
+
+//----------------------------------------------------------
+
+bool IfSucceedCommand    (TCommand *Command, void *Object)
+{
+TScripts* Script = (TScripts*)Object;
+int Num;
+CHECK_PARAM_NUM(Num,2)
+Script->ForwardCommand(Command->Param(0)->GetAsString());
+int Code;
+string Msg;
+
+while (1)
+{
+if (Command->GetResult(&Code, &Msg))
+	{
+		if (Code==COMMAND::SUCCESS) {
+			  Script->ForwardCommand(Command->Param(1)->GetAsString());
+		}
+	RETURN_SUCCESS
+	}
+Sleep(1);
+}
+RETURN_SUCCESS
+}
+
+
+//----------------------------------------------------------
+
+bool RepeatCommand       (TCommand *Command, void *Object)
+{
+TScripts* Script = (TScripts*)Object;
+int Num;
+CHECK_PARAM_NUM(Num,3)
+for (int i=0; i < Command->Param(0)->GetAsNumber(); i++) {
+
+		 // modified
+		 //Script->ForwardCommand(Command->Param(1)->GetAsString());
+		 Sleep(Command->Param(1)->GetAsNumber());
+		 Script->ForwardCommand(Command->Param(2)->GetAsString());
+		 if (Command->GetParamCount()>3) {
+			  for (int j=3; j < Command->GetParamCount() ;j++)
+				{
+				Script->ForwardCommand(Command->Param(j)->GetAsString());
+				}
+		 }
+	}
+RETURN_SUCCESS
+}
+
+//----------------------------------------------------------
+
+bool IfGreaterCommand           (TCommand *Command, void *Object)
+{
+TScripts* Script = (TScripts*)Object;
+int Num;
+CHECK_PARAM_NUM(Num,3)
+if (Command->Param(0)->GetAsNumber()>Command->Param(1)->GetAsNumber()) {
+	Script->ForwardCommand(Command->Param(2)->GetAsString());
+	}
+RETURN_SUCCESS
+}
+
+//----------------------------------------------------------
+
+bool IfLesserCommand           (TCommand *Command, void *Object)
+{
+TScripts* Script = (TScripts*)Object;
+int Num;
+CHECK_PARAM_NUM(Num,3)
+if (Command->Param(0)->GetAsNumber()<Command->Param(1)->GetAsNumber()) {
+	Script->ForwardCommand(Command->Param(2)->GetAsString());
+	}
+RETURN_SUCCESS
+}
+
+//----------------------------------------------------------
+
+bool IfGreaterRestartCommand           (TCommand *Command, void *Object)
+{
+TScripts* Script = (TScripts*)Object;
+int Num;
+CHECK_PARAM_NUM(Num,2)
+if (Command->Param(0)->GetAsNumber()>Command->Param(1)->GetAsNumber()) {
+	Script->Stop();
+	Script->Start();
+	}
+RETURN_SUCCESS
+}
+
+//----------------------------------------------------------
+
+bool IfGreaterEndCommand           (TCommand *Command, void *Object)
+{
+TScripts* Script = (TScripts*)Object;
+int Num;
+CHECK_PARAM_NUM(Num,2)
+if (Command->Param(0)->GetAsNumber()>Command->Param(1)->GetAsNumber()) {
+	Script->Stop();
+	}
+RETURN_SUCCESS
+}
+
+
+//----------------------------------------------------------
+
+bool IfLesserRestartCommand           (TCommand *Command, void *Object)
+{
+TScripts* Script = (TScripts*)Object;
+int Num;
+CHECK_PARAM_NUM(Num,2)
+if (Command->Param(0)->GetAsNumber()<Command->Param(1)->GetAsNumber()) {
+	Script->Stop();
+	Script->Start();
+	}
+RETURN_SUCCESS
+}
+
+//----------------------------------------------------------
+
+bool IfLesserEndCommand           (TCommand *Command, void *Object)
+{
+TScripts* Script = (TScripts*)Object;
+int Num;
+CHECK_PARAM_NUM(Num,2)
+if (Command->Param(0)->GetAsNumber()<Command->Param(1)->GetAsNumber()) {
+	Script->Stop();
+	}
+RETURN_SUCCESS
+}
+
+//----------------------------------------------------------
+};
+
+//end of namespace
+
+__fastcall TScripts::TScripts(bool CreateSuspended,TCommandQueue* Commands)
+: TCommandExecuter(CreateSuspended,Commands)
+{
+Object = (TScripts*)this;
+FileName = "";
+f_IsLoaded = false;
+
+mapCommands.insert(std::make_pair("End", &EndCommand));
+mapCommands.insert(std::make_pair("Restart", &RestartCommand));
+mapCommands.insert(std::make_pair("IfEnd", &IfEndCommand));
+mapCommands.insert(std::make_pair("IfRestart", &IfRestartCommand));
+mapCommands.insert(std::make_pair("If", &IfCommand));
+mapCommands.insert(std::make_pair("Repeat", &RepeatCommand));
+mapCommands.insert(std::make_pair("IfGreater", &IfGreaterCommand));
+mapCommands.insert(std::make_pair("IfLesser", &IfLesserCommand));
+mapCommands.insert(std::make_pair("IfSucceed", &IfSucceedCommand));
+mapCommands.insert(std::make_pair("IfGreaterRestart", &IfGreaterRestartCommand));
+mapCommands.insert(std::make_pair("IfGreaterEnd", &IfGreaterEndCommand));
+mapCommands.insert(std::make_pair("IfLesserRestart", &IfLesserRestartCommand));
+mapCommands.insert(std::make_pair("IfLesserEnd", &IfLesserEndCommand));
+detectme=4;
+}
+
+//----------------------------------------------------------
+
+bool TScripts::HandleCommand(TCommand* Command)
+{
+AnsiString ResCom;
+if (Command->GetCommandClass()!="") ResCom = Command->GetCommandClass().c_str() + AnsiString(".");
+ResCom = ResCom + Command->GetCommandName().c_str();
+bool SlotExist = false;
+string res;
+res = ResCom.c_str();
+for (int i=0; i < Command->GetParamCount(); i++) {
+	AnsiString S = Command->Param(i)->GetAsString().c_str();
+	int a = S.Pos("&Slot&");
+	if (a!=0)
+		{
+			S.Delete(a,6);
+			S.Insert(IntToStr(Slot),a);
+			SlotExist = true;
+		   if (Command->Param(i)->IsString())
+			{
+			res = res + (string)",\"" + (string)(S.c_str()) + (string)"\"";
+			}
+		   else
+			{
+			res = res + (string)"," + (string)(S.c_str());
+			}
+		}
+	else
+		res = res + (string)"," + Command->Param(i)->GetAsString().c_str();
+	}
+if (SlotExist) {
+	Command->UpdateCommand(res);
+	}
+
+Command->RemoveResult();
+Reciever->Commands->ForwardCommand(Command);
+
+int t=0;
+
+// here have to find solution
+return true;
+
+while (!Command->GetResult())
+	{
+	 if (Command->GetCommandName()=="Log")
+		{
+		Command->GetResult();
+		int g=1;
+		}
+		t++;
+	}
+if (Command->GetCommandName()=="Log")
+		{
+		Command->GetResult();
+		int g=1;
+		}
+int k= t;
+return true;
+}
+
+//----------------------------------------------------------
+
+bool TScripts::ForwardCommand(string CommandLine)
+{
+Reciever->Commands->CreateCommand(CommandLine);
+return true;
+}
+
+//----------------------------------------------------------
+
+bool TScripts::PreCommandHandler(TCommand * Command)
+{
+return true;
+}
+
+
+
+
+
+
+

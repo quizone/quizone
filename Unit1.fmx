@@ -1,0 +1,142 @@
+object Form1: TForm1
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 480
+  ClientWidth = 640
+  Fill.Color = claBlack
+  Fill.Kind = Solid
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnClose = FormClose
+  OnKeyDown = FormKeyDown
+  DesignerMasterStyle = 0
+  object Image1: TImage
+    MultiResBitmap = <
+      item
+      end>
+    Position.X = 368.000000000000000000
+    Position.Y = 296.000000000000000000
+    Size.Width = 121.000000000000000000
+    Size.Height = 113.000000000000000000
+    Size.PlatformDefault = False
+    OnClick = Image1Click
+    OnDblClick = Image1DblClick
+    OnMouseMove = Image1MouseMove
+    OnMouseUp = Image1MouseUp
+  end
+  object Timer1: TTimer
+    Interval = 30
+    OnTimer = Timer1Timer
+    Left = 176
+    Top = 232
+  end
+  object Memo1: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Position.X = 24.000000000000000000
+    Position.Y = 16.000000000000000000
+    Size.Width = 321.000000000000000000
+    Size.Height = 321.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    Visible = False
+    Viewport.Width = 317.000000000000000000
+    Viewport.Height = 317.000000000000000000
+  end
+  object CheckBox1: TCheckBox
+    Position.X = 120.000000000000000000
+    Position.Y = 336.000000000000000000
+    TabOrder = 3
+    Text = 'CheckBox1'
+    Visible = False
+    OnKeyDown = FormKeyDown
+  end
+  object CheckBox2: TCheckBox
+    Position.X = 120.000000000000000000
+    Position.Y = 360.000000000000000000
+    TabOrder = 4
+    Text = 'CheckBox2'
+    Visible = False
+    OnKeyDown = FormKeyDown
+  end
+  object Panel1: TPanel
+    Position.X = 256.000000000000000000
+    Position.Y = 32.000000000000000000
+    Size.Width = 305.000000000000000000
+    Size.Height = 257.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 10
+    OnMouseDown = Panel1MouseDown
+    OnMouseMove = Panel1MouseMove
+    OnMouseUp = Panel1MouseUp
+    object Memo2: TMemo
+      Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+      DataDetectorTypes = []
+      Position.Y = 56.000000000000000000
+      Size.Width = 305.000000000000000000
+      Size.Height = 201.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      Viewport.Width = 301.000000000000000000
+      Viewport.Height = 197.000000000000000000
+    end
+    object Edit1: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 1
+      Position.X = 8.000000000000000000
+      Position.Y = 8.000000000000000000
+      Size.Width = 289.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      OnKeyDown = Edit1KeyDown
+    end
+    object CheckBox3: TCheckBox
+      Position.Y = 32.000000000000000000
+      Size.Width = 97.000000000000000000
+      Size.Height = 19.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      Text = 'Log'
+      OnChange = CheckBox3Change
+    end
+  end
+  object IdFTP1: TIdFTP
+    IPVersion = Id_IPv4
+    Host = 'foralexon.myjino.ru'
+    ConnectTimeout = 0
+    Password = 'sansho123'
+    Username = 'foralexon_quizone'
+    NATKeepAlive.UseKeepAlive = False
+    NATKeepAlive.IdleTimeMS = 0
+    NATKeepAlive.IntervalMS = 0
+    ProxySettings.ProxyType = fpcmNone
+    ProxySettings.Port = 0
+    Left = 296
+    Top = 232
+  end
+  object NetHTTPRequest1: TNetHTTPRequest
+    Asynchronous = False
+    ConnectionTimeout = 60000
+    ResponseTimeout = 60000
+    MethodString = 'POST'
+    Left = 168
+    Top = 136
+  end
+  object RESTClient1: TRESTClient
+    Params = <>
+    HandleRedirects = True
+    Left = 128
+    Top = 104
+  end
+  object IdUDPServer1: TIdUDPServer
+    Active = True
+    Bindings = <>
+    DefaultPort = 5600
+    OnUDPRead = IdUDPServer1UDPRead
+    Left = 216
+    Top = 360
+  end
+end

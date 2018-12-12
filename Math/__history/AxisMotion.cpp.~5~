@@ -1,0 +1,379 @@
+//---------------------------------------------------------------------------
+
+
+#pragma hdrstop
+
+#include "AxisMotion.h"
+
+#pragma package(smart_init)
+
+//---------------------------------------------------------------------------
+
+void TAxisMotion::SetImmediateTarget(double Xt, double Vt, bool IsCircle,int CircularType)
+{
+IsJ=false;
+Ta=0;Ts=0;Td=0;
+D1=Xt; V1 = Vt;
+D0 = D1; V0 = V1;
+a=1; Vm=V1;
+this->IsCircle = IsCircle;
+this->CircularType = CircularType;
+if (IsCircle)
+		{
+		if (CircularType==CIRCULAR360)
+				{
+				D0 = _geo_degmod(D0);
+				D1 = _geo_degmod(D1);
+				}
+		else
+				{
+				D0 = _geo_degmod2(D0);
+				D1 = _geo_degmod2(D1);
+				}
+
+		}
+}
+
+//---------------------------------------------------------------------------
+
+void TAxisMotion::SetTargetSpeed(double Xi, double Vi, double Vt, double Acc, bool IsCircle,int CircularType)
+{
+IsJ=false;
+this->IsCircle = IsCircle;
+this->CircularType = CircularType;
+
+if (Equal(Acc,0)) return;
+if (Vt<Vi) Acc = -Acc;
+a= Acc;
+Ta = (Vt - Vi)/a;
+Ts = 0;
+Td = 0;
+D0 = Xi; V0 = Vi;
+}
+
+//---------------------------------------------------------------------------
+
+double TAxisMotion::SetTargetDuration (double Xi,double Vi, double Xt, double Vt, double Dur, double Acc, bool IsCircle,int CircularType)
+{
+this->IsCircle = IsCircle;
+this->CircularType = CircularType;
+
+SetTarget(Xi,Vi,Xt,Vt,Acc,1,IsCircle,true);
+double AllD = Ta+Ts+Td;
+// considering vi = vt = 0
+
+if (IsCircle)
+        {
+        if (CircularType==CIRCULAR360)
+                {
+                Xi = _geo_degmod(Xi);
+                Xt = _geo_degmod(Xt);
+                }
+        else
+                {
+                Xi = _geo_degmod2(Xi);
+                Xt = _geo_degmod2(Xt);
+                }
+         if (Xt>Xi+180) Xi = Xi + 360;
+         else if (Xi>Xt+180) Xt = Xt + 360;
+        }
+
+if (Xt<Xi) Acc = -Acc;
+double Delta = Acc*Acc*Dur*Dur - 4*Acc*(Xt-Xi);
+double Vm;
+double Ta1,Ta2;
+if (Dur<EPSILON) goto Finish;
+if (Delta > EPSILON)
+        {
+		double Ta1 = (Acc*Dur + sqrt(Delta)) / (2*Acc);
+		double Ta2 = (Acc*Dur - sqrt(Delta)) / (2*Acc);
+        if ((Ta1>EPSILON) && (Ta1<(Dur/2.0))) Ta = Ta1;
+                else if ((Ta2>EPSILON) && (Ta2<(Dur/2.0))) Ta = Ta2;
+                        else goto NoSolution;
+
+Vm = Ta*fabs(Acc);
+SetTarget(Xi,0,Xt,0,fabs(Acc),Vm,IsCircle,false);
+goto Finish;
+        }
+NoSolution:
+ {   // Get better acceleration with no speed limit     considering vi=vt=0
+     Acc = (Xt-Xi)/(Dur*Dur/4.0);
+     SetTarget(Xi,Vi,Xt,Vt,fabs(Acc),1,IsCircle,true);
+ }
+Finish:
+AllD = Ta+Ts+Td;
+return fabs(Acc);
+}
+
+
+//---------------------------------------------------------------------------
+
+double TAxisMotion::SetTargetPositionSpeedDuration(double Xi,double Vi, double Xt, double Vt, double Duration, double MaxAcc, double Vmax, bool IsCircle, bool InfinitSpeed, int CircularType)
+{
+this->IsCircle = IsCircle;
+this->CircularType = CircularType;
+
+if (IsCircle)
+		{
+		if (CircularType==CIRCULAR360)
+				{
+				Xi = _geo_degmod(Xi);
+				Xt = _geo_degmod(Xt);
+				}
+		else
+				{
+				Xi = _geo_degmod2(Xi);
+				Xt = _geo_degmod2(Xt);
+				}
+		 if (Xt>Xi+180) Xi = Xi + 360;
+		 else if (Xi>Xt+180) Xt = Xt + 360;
+		}
+
+double T = Duration;
+if (fabs(T)<EPSILON)
+		{
+
+		return 0;
+		}
+ IsJ=true;
+
+ this->J= 12*(Xi-Xt)/(T*T*T) + 6*(Vi+Vt)/(T*T);
+ this->a = (Vt-Vi)/(T) - 0.5*J*T;
+
+double Delta1 = a*a - 2*J*(Vi-Vmax);
+double Delta2 = a*a - 2*J*(Vi+Vmax);
+
+double T11,T12,T21,T22;
+double VInterValue1,VInterValue2;
+double T1=-1;
+double T2=-1;
+if (Delta1>0)
+		{
+		T11 = (-a+sqrt(Delta1))/(J);
+		T12 = (-a-sqrt(Delta1))/(J);
+		}
+if (Delta2>0)
+		{
+		T21 = (-a+sqrt(Delta2))/(J);
+		T22 = (-a-sqrt(Delta2))/(J);
+		}
+
+
+
+ this->Ta = T; this->Td = 0; this->Ts = 0;
+ this->V0 = Vi; this->V1 = Vt; this->Vm = Vmax; this->D0 = Xi ; this->D1 = Xt;
+
+VInterValue1 = GetSpeed((T11+T12)/2.0);
+VInterValue2 = GetSpeed((T21+T22)/2.0);
+
+if (VInterValue1>Vmax)
+		{
+		double Min=T11;
+		if (T12<Min) Min=T12;
+		T1 = Min;
+		if (Min<0) T1=0;
+		T=T1;
+		SetTarget(Xi,Vi,Xt,Vt,MaxAcc,Vmax,IsCircle,InfinitSpeed,CircularType);
+		return -11;
+		}
+if (VInterValue2<-Vmax)
+		{
+		double Min=T21;
+		if (T22<Min) Min=T22;
+		T2 = Min;
+		if (Min<0) T2=0;
+		T=T2;
+		SetTarget(Xi,Vi,Xt,Vt,MaxAcc,Vmax,IsCircle,InfinitSpeed,CircularType);
+		return -11;
+		}
+
+this->Ta = T;
+double ResV = GetSpeed(Ta);
+double ResV2 = GetSpeed(0);
+
+double ResV1 = GetSpeed(T);
+
+
+if ( ResV< -16)
+		{
+		int t=1;
+		}
+if (ResV>16)
+		{
+		int t=1;
+		}
+
+ return J;
+}
+
+//---------------------------------------------------------------------------
+
+void TAxisMotion::SetTarget(double D0,double V0, double D1, double V1, double a, double Vm, bool IsCircle, bool InfinitSpeed,int CircularType)
+{
+ double Delta;
+ double Ta1;
+ double Ta2;
+ double Td1;
+ double Td2;
+ double TaMax;
+ double D0min;
+ this->IsCircle = IsCircle;
+ this->CircularType = CircularType;
+ IsJ=false;
+
+if (IsCircle)
+		{
+		if (CircularType==CIRCULAR360)
+				{
+				D0 = _geo_degmod(D0);
+				D1 = _geo_degmod(D1);
+				}
+		else
+				{
+				D0 = _geo_degmod2(D0);
+				D1 = _geo_degmod2(D1);
+				}
+		 if (D1>D0+180) D0 = D0 + 360;
+		 else if (D0>D1+180) D1 = D1 + 360;
+		}
+
+ if (fabs(a)<EPSILON) return;
+ if (fabs(V1)>=fabs(Vm))
+		{
+		Ta= fabs(((sign(V1)*Vm)-V0)/a);
+		if (V1<V0) {a=-a; Vm=-Vm;}
+		Td=0;
+		Ts=0;
+		}
+ else
+ {
+ double Tamin = fabs((V1-V0)/a);
+ double D1min = D1 + Tamin*V1;
+ D1min = D1+Tamin*V1;
+
+ if (V0<=V1)
+	   D0min = D0 + V0*Tamin + 0.5*a*Tamin*Tamin;
+ else  D0min = D0 + V0*Tamin - 0.5*a*Tamin*Tamin;
+ if ((V0<=V1) && (D1min<=D0min)) {a=-a; Vm=-Vm;}
+ else if ((V0>=V1) && (D1min<=D0min)) {a=-a; Vm=-Vm;}
+ Delta = (2*V0-2*V1)*(2*V0-2*V1) - 4*a*((V0-V1)*(V0-V1)/(2*a) + D0 - D1);
+
+ //Delta = 0;
+ if ((Delta <0) && (Delta>-EPSILON)) Delta = 0;
+ if (Delta < 0)
+		{
+		Ta = -1; Ts = -1; Td = -1;
+		}
+ else
+		{
+ Ta1 = (-2*V0+2*V1+sqrt(Delta))/(2*a);
+ Ta2 = (-2*V0+2*V1-sqrt(Delta))/(2*a);
+ if (fabs(Ta1)<EPSILON) Ta1 = 0;
+ if (fabs(Ta2)<EPSILON) Ta2 = 0;
+ Td1 = (V0+a*Ta1-V1)/a;
+ Td2 = (V0+a*Ta2-V1)/a;
+ if (fabs(Td1)<EPSILON) Td1 = 0;
+ if (fabs(Td2)<EPSILON) Ta2 = 0;
+ TaMax =  (Vm-V0)/a;
+ if (TaMax<0)
+		TaMax = 0;
+
+if (InfinitSpeed == true)
+		{
+		if ((Ta1>=0) && (Td1>=0)) {Ta=Ta1;Ts=0;Td=Td1;}
+		 else  if ((Ta2>=0) && (Td2>=0)) {Ta=Ta2;Ts=0;Td=Td2;}
+		 else
+				{
+				// calculation error
+				}
+		}
+else
+{
+ if ((Ta1>=0) && (Td1>=0) && (Ta1<=TaMax)) {Ta=Ta1;Ts=0;Td=Td1;}
+ else  if ((Ta2>=0) && (Td2>=0) && (Ta2<=TaMax)) {Ta=Ta2;Ts=0;Td=Td2;}
+ else if ((Ta1>TaMax) || (Ta2>TaMax))
+		{
+		Ta = TaMax;
+		Td = (V0+a*Ta-V1)/a;
+		if (fabs(V1-Vm) < EPSILON)
+				{
+				Td = 0;
+				Ts = 0;
+				}
+		else
+		Ts = (D0-D1-V1*Ta - V1*Td + V0*Ta + 0.5*a*Ta*Ta + Vm*Td - 0.5*a*Td*Td )/(V1-Vm);
+		}
+ else {
+		// cannot be caluculated
+	   }
+	   }
+}
+if ((Ta<-EPSILON) || (Td<-EPSILON) || (Ts<-EPSILON))
+		{
+		static int i=0;
+		i++;
+		// LogFile.PutLog(LOG_ERROR,"Wrong path calculation results") ;
+		}
+
+	 double D = D0 + 0.5*a*Ta*Ta + V0*Ta + (V0+a*Ta)*Ts + (V0+a*Ta)*Td - 0.5*a*Td*Td;
+	 double D3 = D1 + V1*(Ta+Ts+Td);
+ if (fabs(D-D3) > EPSILON)
+		{
+		//int o=0;
+		//LogFile.PutLog(LOG_WARNING,"Path calculation with considerable errors");
+		}
+}
+ this->Ta = Ta; this->Td = Td; this->Ts = Ts;
+ this->a = a; this->V0 = V0; this->V1 = V1; this->Vm = Vm; this->D0 = D0 ; this->D1 = D1;
+ this->b = a;
+}
+
+
+//------------------------CalculateSpeed--------------------------------------------------
+double TAxisMotion::GetSpeed(double T)
+{
+if (IsJ==true)
+		{
+		double V;
+		if (T<0) return 0;
+		if (T<Ta) V = V0 + a*T + 0.5*J*T*T;
+		else V = V0 + a*Ta + 0.5*J*Ta*Ta;
+		return V;
+		}
+if (T<0) return 0;
+if (T<Ta) return V0 + a*T;
+if (T<Ta + Ts) return V0+ a*Ta; // same as Vm
+if (T<Ta+Ts+Td) return (V0+ a*Ta) - b*(T-Ta-Ts);
+if (T>=Ta+Ts+Td) return (V0+ a*Ta) - b*(Td);
+return V1;       // must be epsilon and move toward 0
+}
+
+//------------------------CalculateSpeed--------------------------------------------------
+double TAxisMotion::GetPosition(double T)
+{
+double Res=0;
+if (IsJ==true)
+		{
+		if (T<0) Res = 0;
+		else if (T<Ta) Res = D0 + V0*T + 0.5*a*T*T + (1.0/6.0)*J*T*T*T;
+		else Res =        D0 + V0*Ta + 0.5*a*Ta*Ta + (1.0/6.0)*J*Ta*Ta*Ta + (V0 + a*Ta + 0.5*J*Ta*Ta)*(T-Ta);
+
+		}
+else
+		{
+if (T<0) Res = 0;
+		else if (T<Ta) Res = D0 + V0*T + 0.5*a*T*T;
+		else if (T<Ta + Ts) Res =  D0 + V0*Ta + 0.5*a*Ta*Ta +(T-Ta)*(V0+ a*Ta); // same as Vm
+		else if (T<Ta+Ts+Td) Res = D0 + V0*Ta + 0.5*a*Ta*Ta +(Ts)*(V0+ a*Ta) + (V0+ a*Ta)*(T-Ta-Ts) - 0.5*b*(T-Ta-Ts)*(T-Ta-Ts);
+		else if (T>=Ta+Ts+Td) Res = D0 + V0*Ta + 0.5*a*Ta*Ta +(Ts)*(V0+ a*Ta) + (V0+ a*Ta)*(Td) - 0.5*b*(Td)*(Td) + (V0+ a*Ta - b*Td)*(T-Ta-Ts-Td);
+		}
+
+if (IsCircle == false)
+		return Res;
+else
+		if (CircularType==CIRCULAR360)
+				return _geo_degmod(Res);
+		else
+				return _geo_degmod2(Res);
+}
+

@@ -1,0 +1,36 @@
+//---------------------------------------------------------------------------
+
+#ifndef Unit2H
+#define Unit2H
+//---------------------------------------------------------------------------
+#include <System.Classes.hpp>
+#include <FMX.Controls.hpp>
+#include <FMX.Forms.hpp>
+#include <FMX.Types.hpp>
+
+#include "unit1.h"
+
+
+//---------------------------------------------------------------------------
+class TForm2 : public TForm
+{
+__published:	// IDE-managed Components
+	TTimer *Timer1;
+	void __fastcall FormCreate(TObject *Sender);
+	void __fastcall Timer1Timer(TObject *Sender);
+	void __fastcall FormKeyDown(TObject *Sender, WORD &Key, System::WideChar &KeyChar,
+          TShiftState Shift);
+private:	// User declarations
+	TImage** Images;
+	double* LastX;
+	double* LastY;
+	TLabel** Labels;
+	TAxisMotion* MotionsX;
+	TAxisMotion* MotionsY;
+public:		// User declarations
+	__fastcall TForm2(TComponent* Owner);
+};
+//---------------------------------------------------------------------------
+extern PACKAGE TForm2 *Form2;
+//---------------------------------------------------------------------------
+#endif

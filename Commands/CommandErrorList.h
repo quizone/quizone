@@ -1,0 +1,69 @@
+//command error list
+
+#ifndef CommandListErrorH
+#define CommandListErrorH
+
+#include <string>
+#include <map>
+
+typedef std::map<std::string, double> TVars;
+typedef std::map<std::string, std::string> TStringVars;
+
+#define CommandErrorCodeAndMessage(Value) Value,COMMAND::CommandErrorString[Value]
+
+using namespace std;
+
+namespace COMMAND{
+const int SUCCESS				   =0x00;
+const int NOT_CONNECTED            =0x01;
+const int OUT_OF_RANGE             =0x02;
+const int TOO_FEW_PARAMETERS       =0x03;
+const int WRONG_PARAMETER_VALUE    =0x04;
+const int VARIABLE_DOES_NOT_EXIST  =0x05;
+const int UNKNOWN                  =0x06;
+const int COMMAND_DOES_NOT_EXIST   =0x07;
+const int EMPTY_EXPRESSION   	   =0x08;
+const int NO_FUNCTION 	  		   =0x09;
+const int SYNATX_ERROR             =0x0A;
+const int UNBALANCED               =0x0B;
+const int NO_EXP                   =0x0C;
+const int FILE_CANNOT_OPEN		   =0x0D;
+const int TOO_MANY_PARAMETERS	   =0x0E;
+const int SKIPPED				   =0x0F;
+const int NOT_INITIALIZED		   =0x10;
+const int TIMEOUT				   =0x11;
+
+
+
+//sources
+const int SOURCE_UI             =0x01;
+const int SOURCE_SCRIPT         =0x02;
+const int SOURCE_UDP            =0x03;
+const int SOURCE_TCP            =0x04;
+const int SOURCE_INTERNAL       =0x05;
+const int SOURCE_TRIGGER        =0x06;
+const int SOURCE_UNKNOWN		=0x00;
+
+
+const string CommandErrorString[] = {"Success",
+							   "Not Connected",
+							   "Out of Range",
+							   "Too Few Parameters",
+							   "Wrong Parameter Value",
+							   "Variable Does not Exist",
+							   "Unknown error",
+							   "Command Does not Exist",
+							   "Empty expression",
+							   "No function",
+							   "Syntax Error",
+							   "Unbalanced Parentheses",
+							   "No expression present",
+							   "Cannot open file",
+							   "Too Many Parameters",
+							   "Skipped",
+							   "Not initialized",
+							   "Time out"
+							   };
+};
+
+#endif

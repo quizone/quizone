@@ -1,0 +1,10 @@
+Set,TempScale,1
+Music.Play,2
+
+Quiz.SetItemLabel,ActionAnswer-1,"",50,50,0.1,0.1,0,1,0
+Delay,0.1
+Quiz.SetItemLabel,ActionAnswer-1,"Yes!",50,50,25,25,0,0,1
+
+#Repeat,25,25,"Quiz.SetScale,ActionAnswer-1,TempScale","Set,TempScale,TempScale+0.1"
+#Quiz.SetScale,ActionAnswer-1,1
+

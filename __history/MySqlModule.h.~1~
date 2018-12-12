@@ -1,0 +1,24 @@
+//---------------------------------------------------------------------------
+
+#ifndef MySqlModuleH
+#define MySqlModuleH
+//---------------------------------------------------------------------------
+#include <System.Classes.hpp>
+#include "DBAccess.hpp"
+#include "MemDS.hpp"
+#include "MyAccess.hpp"
+#include <Data.DB.hpp>
+//---------------------------------------------------------------------------
+class TDataModule2 : public TDataModule
+{
+__published:	// IDE-managed Components
+	TMyQuery *MyQuery1;
+	TMyConnection *MyConnection1;
+private:	// User declarations
+public:		// User declarations
+	__fastcall TDataModule2(TComponent* Owner);
+};
+//---------------------------------------------------------------------------
+extern PACKAGE TDataModule2 *DataModule2;
+//---------------------------------------------------------------------------
+#endif

@@ -1,0 +1,10 @@
+Query.SetQuery,QuizID
+Quiz.Opacity,0,0
+Delay,0.1
+Quiz.SetLabel,QuizLabel
+Quiz.SetLabelOpacity,1,0.5
+Quiz.Randomize
+Delay,2
+Quiz.SetLabelOpacity,0,2
+Delay,1
+Quiz.Opacity,1,1
