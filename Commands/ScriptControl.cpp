@@ -94,6 +94,7 @@ CHECK_VAR_RANGE(ScriptID,0,TScripts::ScriptCount-1)
 Scripts[ScriptID]->Stop();
 
 FILE *fp;
+string filename = Command->Param(0)->GetAsString().c_str();
 fp = fopen(Command->Param(0)->GetAsString().c_str(),"rt");
 if (!fp)
 	{

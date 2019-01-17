@@ -1,28 +1,55 @@
-Set,Rate,0.003
-Set,Scale,7.5
+#Quiz name:
+#values Initialization
 
-Quiz.Initialize,12,1,Rate,1,0.1
-Quiz,Opacity,0,0
+Query.Set,QuizID,3
+Set,Rate,0.002
+Set,Scale,0.7
+Set,Acc,20
+Set,LabelYOffset,-5
+Set,NumOfItems,12
+Set,QuizLabel,"World countries"
+Quiz.SetPath,"Quizes/countries/"
+
+#Play initialization
+Quiz.Opacity,0,0
+Quiz.Initialize,NumOfItems,1,Rate,Acc,0.2
+Set,color,"0xffffaa88"
+
+Quiz.SetLabel,QuizLabel
+Quiz.SetLabelOpacity,1,3
+
 Delay,0.1
 
-Set,QuizLabel,"Countries by maps"
-Query.Set,QuizID,2
+#Quiz.LoadBG,"bg.png"
+#Quiz.SetBGOpacity,0
 
+Quiz.LoadImage,0,"01.png",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,1,"02.png",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,2,"03.png",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,3,"04.png",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,4,"05.png",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,5,"06.png",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,6,"07.png",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,7,"08.png",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,8,"09.png",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,9,"10.png",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,10,"11.png",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,11,"12.png",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
 
-Quiz.SetPath,"c:/Quizone/Quizes/countries/"
-Quiz.LoadImage,0,"Egypt02.png",Scale,Scale
-Quiz.LoadImage,1,"Southafrica02.png",Scale,Scale
-Quiz.LoadImage,2,"Saudi02.png",Scale,Scale
-Quiz.LoadImage,3,"cyprus02.png",Scale,Scale
-Quiz.LoadImage,4,"Italy02.png",Scale,Scale
-Quiz.LoadImage,5,"iraq02.png",Scale,Scale
-Quiz.LoadImage,6,"thai02.png",Scale,Scale
-Quiz.LoadImage,7,"japan02.png",Scale,Scale
-Quiz.LoadImage,8,"philippine02.png",Scale,Scale
-Quiz.LoadImage,9,"syria02.png",Scale,Scale
-Quiz.LoadImage,10,"spain02.png",Scale,Scale
-Quiz.LoadImage,11,"Korea02.png",Scale,Scale
-Quiz.LoadImage,12,"frame.png",5,5,0
+Quiz.LoadFrame,"Frame.png"
+Quiz.ShowFrame,1
 
 Script.RunScript,QuizStart
 

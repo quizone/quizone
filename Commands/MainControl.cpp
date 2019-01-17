@@ -53,6 +53,7 @@ bool TMainControl::HandleCommand(TCommand* Command)
 {
   ReportCommands->ForwardCommand(Command);
 
+  /*
   if ((Command->GetCommandClass()=="") && (Command->GetCommandName()=="Set"))
 		 {
 		 int Num;
@@ -68,7 +69,7 @@ bool TMainControl::HandleCommand(TCommand* Command)
 			TCommand::Vars->operator [](Command->Param(0)->GetAsString()) = value;
 		 return true;
 		 }
-
+	*/
 
 
 

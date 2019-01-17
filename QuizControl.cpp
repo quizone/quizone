@@ -14,6 +14,7 @@ void PrepareRandomValues(int _min, int _max)
 {
 minV = _min;
 maxV = _max;
+randomize();
 for (int i = minV; i < maxV; i++) {
 	elem[i] = false;
 	}
@@ -91,9 +92,12 @@ Sequence = new int[255];
 namespace{
 
 bool SetLabelOpacityCommand		(TCommand *Command,void* Object);
+bool SetBGOpacityCommand		(TCommand *Command,void* Object);
+bool SetBGBlackOpacityCommand		(TCommand *Command,void* Object);
 bool SetCommand	   		(TCommand *Command,void* Object);
 bool InitializeCommand	(TCommand *Command,void* Object);
 bool LoadImageCommand	(TCommand *Command,void* Object);
+
 bool SetPathCommand		(TCommand *Command,void* Object);
 bool SetModelCommand	(TCommand *Command,void* Object);
 bool SetLabelCommand	(TCommand *Command,void* Object);
@@ -101,11 +105,14 @@ bool SetRateCommand		(TCommand *Command,void* Object);
 bool OpacityCommand	   	(TCommand *Command,void* Object);
 bool RandomizeCommand 	(TCommand *Command,void* Object);
 bool SetScaleCommand 	(TCommand *Command,void* Object);
+
+bool LoadFrameCommand 	(TCommand *Command,void* Object);
+bool ShowFrameCommand 	(TCommand *Command,void* Object);
+
+bool LoadBGCommand 	(TCommand *Command,void* Object);
+bool ShowBGCommand 	(TCommand *Command,void* Object);
+
 bool SetItemLabelCommand 	(TCommand *Command,void* Object);
-
-
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 
@@ -164,6 +171,7 @@ for (int i=0; i < Quiz->NumItems; i++) {
 	Quiz->Items[i].Reload = false;
 	Quiz->Sequence[i] = i;
 	}
+Quiz->ReloadFrame = false;
 Quiz->InitialTime = GETTICKS()
 Quiz->Model = Command->Param(1)->GetAsNumber();
 Quiz->Rate = Command->Param(2)->GetAsNumber();
@@ -174,9 +182,55 @@ RETURN_SUCCESS
 }
 
 //-----------------------------------------------------------------------------
+bool LoadFrameCommand 	(TCommand *Command,void* Object)
+{  // frame file name
+int Num;
+CHECK_PARAM_NUM(Num,1)
+TQuiz* Quiz = (TQuiz*)Object;
+Quiz->FrameFileName = Command->Param(0)->GetAsString();
+Quiz->ReloadFrame = true;
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool ShowFrameCommand 	(TCommand *Command,void* Object)
+{  // flag
+int Num;
+CHECK_PARAM_NUM(Num,1)
+TQuiz* Quiz = (TQuiz*)Object;
+Quiz->ShowFrame = Command->Param(0)->GetAsNumber();
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+bool LoadBGCommand 	(TCommand *Command,void* Object)
+{  // file name
+int Num;
+CHECK_PARAM_NUM(Num,1)
+TQuiz* Quiz = (TQuiz*)Object;
+Quiz->BGFilename = Command->Param(0)->GetAsString();
+Quiz->ReloadBG = true;
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool ShowBGCommand 	(TCommand *Command,void* Object)
+{  // flag
+int Num;
+CHECK_PARAM_NUM(Num,1)
+TQuiz* Quiz = (TQuiz*)Object;
+Quiz->ShowBG = Command->Param(0)->GetAsNumber();
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
 
 bool LoadImageCommand	(TCommand *Command,void* Object)
-{  // id, file name , SizeX, SizeY   , optional (add number id to the image)
+{  // id, file name , SizeX, SizeY   , optional (add number id to the image - 1) (add QRImage to the image) ,
+// optional (LabelsXOffset),optional (LabelsYOffset), optional LabelXScale, optional LabelYScale,  optional opacity, optional color
 int Num;
 CHECK_PARAM_NUM(Num,2)
 TQuiz* Quiz = (TQuiz*)Object;
@@ -186,10 +240,17 @@ double SizeX = 1;
 double SizeY = 1;
 if (Command->GetParamCount()>2) SizeX = Command->Param(2)->GetAsNumber();
 if (Command->GetParamCount()>3) SizeY = Command->Param(3)->GetAsNumber();
-	Quiz->Items[(int)Command->Param(0)->GetAsNumber()].SizeY = SizeX;
-	Quiz->Items[(int)Command->Param(0)->GetAsNumber()].SizeX = SizeY;
+	Quiz->Items[(int)Command->Param(0)->GetAsNumber()].SizeX = SizeX;
+	Quiz->Items[(int)Command->Param(0)->GetAsNumber()].SizeY = SizeY;
 Quiz->Items[(int)Command->Param(0)->GetAsNumber()].Reload = true;
-if (Command->GetParamCount()>4) Quiz->Items[(int)Command->Param(0)->GetAsNumber()].AddNumber = Command->Param(4)->GetAsNumber();
+if (Command->GetParamCount()>4) Quiz->Items[(int)Command->Param(0)->GetAsNumber()].AddID = Command->Param(4)->GetAsNumber();
+if (Command->GetParamCount()>5) Quiz->Items[(int)Command->Param(0)->GetAsNumber()].ID.PosX.Set(Command->Param(5)->GetAsNumber());
+if (Command->GetParamCount()>6) Quiz->Items[(int)Command->Param(0)->GetAsNumber()].ID.PosY.Set(Command->Param(6)->GetAsNumber());
+if (Command->GetParamCount()>7) Quiz->Items[(int)Command->Param(0)->GetAsNumber()].ID.ScaleX.Set(Command->Param(7)->GetAsNumber());
+if (Command->GetParamCount()>8) Quiz->Items[(int)Command->Param(0)->GetAsNumber()].ID.ScaleY.Set(Command->Param(8)->GetAsNumber());
+if (Command->GetParamCount()>9) Quiz->Items[(int)Command->Param(0)->GetAsNumber()].ID.Opacity.Set(Command->Param(9)->GetAsNumber());
+if (Command->GetParamCount()>10) Quiz->Items[(int)Command->Param(0)->GetAsNumber()].ID.Color = StrToInt(Command->Param(10)->GetAsString().c_str());
+
 RETURN_SUCCESS
 }
 
@@ -321,6 +382,37 @@ if (Command->Param(1)->GetAsNumber() ==0) Quiz->LabelOpacityChangeRate = 100;
 RETURN_SUCCESS
 }
 
+//-----------------------------------------------------------------------------
+
+bool SetBGOpacityCommand		(TCommand *Command,void* Object)
+{ // opacity , duration
+int Num;
+CHECK_PARAM_NUM(Num,2)
+CHECK_VAR_RANGE(Command->Param(0)->GetAsNumber(),0,1)
+TQuiz* Quiz = (TQuiz*)Object;
+Quiz->BGTargetOpacity = Command->Param(0)->GetAsNumber();
+Quiz->BGOpacityStartingTime = GETTICKS()
+if (Command->Param(1)->GetAsNumber() ==0) Quiz->BGOpacityChangeRate = 100;
+		else Quiz->BGOpacityChangeRate = (Quiz->BGTargetOpacity - Quiz->BGOpacity) / Command->Param(1)->GetAsNumber();
+
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool SetBGBlackOpacityCommand		(TCommand *Command,void* Object)
+{ // opacity , duration
+int Num;
+CHECK_PARAM_NUM(Num,2)
+CHECK_VAR_RANGE(Command->Param(0)->GetAsNumber(),0,1)
+TQuiz* Quiz = (TQuiz*)Object;
+Quiz->BGBlackTargetOpacity = Command->Param(0)->GetAsNumber();
+Quiz->BGBlackOpacityStartingTime = GETTICKS()
+if (Command->Param(1)->GetAsNumber() ==0) Quiz->BGBlackOpacityChangeRate = 100;
+		else Quiz->BGBlackOpacityChangeRate = (Quiz->BGBlackTargetOpacity - Quiz->BGBlackOpacity) / Command->Param(1)->GetAsNumber();
+
+RETURN_SUCCESS
+}
 
 //-----------------------------------------------------------------------------
 
@@ -375,9 +467,15 @@ mapCommands.insert(std::make_pair("Randomize", &RandomizeCommand));
 mapCommands.insert(std::make_pair("SetPath", &SetPathCommand));
 mapCommands.insert(std::make_pair("SetLabel", &SetLabelCommand));
 mapCommands.insert(std::make_pair("SetLabelOpacity", &SetLabelOpacityCommand));
+mapCommands.insert(std::make_pair("SetBGOpacity", &SetBGOpacityCommand));
+mapCommands.insert(std::make_pair("SetBGBlackOpacity", &SetBGBlackOpacityCommand));
 mapCommands.insert(std::make_pair("SetItemLabel", &SetItemLabelCommand));
 
+mapCommands.insert(std::make_pair("LoadFrame", &LoadFrameCommand));
+mapCommands.insert(std::make_pair("ShowFrame", &ShowFrameCommand));
 
+mapCommands.insert(std::make_pair("LoadBG", &LoadBGCommand));
+mapCommands.insert(std::make_pair("ShowBG", &ShowBGCommand));
 
 }
 //---------------------------------------------------------------------------
@@ -420,6 +518,16 @@ unsigned long LabelOpacityTime = CurrentTime - Quiz->LabelOpacityStartingTime;
 Quiz->LabelOpacityStartingTime = CurrentTime;
 double newValue = Quiz->LabelOpacity + LabelOpacityTime / 1000.0 * Quiz->LabelOpacityChangeRate;
 Quiz->LabelOpacity = Quiz->LabelOpacityChangeRate>=0 ? ( newValue > Quiz->LabelTargetOpacity ?  Quiz->LabelTargetOpacity : newValue) : ( newValue<Quiz->LabelTargetOpacity ? Quiz->LabelTargetOpacity : newValue);
+
+unsigned long BGOpacityTime = CurrentTime - Quiz->BGOpacityStartingTime;
+Quiz->BGOpacityStartingTime = CurrentTime;
+newValue = Quiz->BGOpacity + BGOpacityTime / 1000.0 * Quiz->BGOpacityChangeRate;
+Quiz->BGOpacity = Quiz->BGOpacityChangeRate>=0 ? ( newValue > Quiz->BGTargetOpacity ?  Quiz->BGTargetOpacity : newValue) : ( newValue<Quiz->BGTargetOpacity ? Quiz->BGTargetOpacity : newValue);
+
+unsigned long BGBlackOpacityTime = CurrentTime - Quiz->BGBlackOpacityStartingTime;
+Quiz->BGBlackOpacityStartingTime = CurrentTime;
+newValue = Quiz->BGBlackOpacity + BGBlackOpacityTime / 1000.0 * Quiz->BGBlackOpacityChangeRate;
+Quiz->BGBlackOpacity = Quiz->BGBlackOpacityChangeRate>=0 ? ( newValue > Quiz->BGBlackTargetOpacity ?  Quiz->BGBlackTargetOpacity : newValue) : ( newValue<Quiz->BGBlackTargetOpacity ? Quiz->BGBlackTargetOpacity : newValue);
 
 unsigned long TimePass = CurrentTime - Quiz->InitialTime;
 

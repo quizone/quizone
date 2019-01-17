@@ -1,25 +1,54 @@
-Set,Rate,0.004
-Set,Scale,8
+#Quiz name:
+#values Initialization
 
+Query.Set,QuizID,2
+Set,Rate,0.002
+Set,Scale,0.78
+Set,Acc,20
+Set,LabelYOffset,5
+#Set,LabelYOffset,-50
+
+Set,NumOfItems,10
+Set,QuizLabel,"Kings of Thailand"
+Quiz.SetPath,"Quizes/ThaiKings/"
+
+#Play initialization
 Quiz.Opacity,0,0
-Quiz.Initialize,10,1,Rate,1,0.2
-Set,QuizLabel,"Thai Kings"
-Query.Set,QuizID,1
+Quiz.Initialize,NumOfItems,1,Rate,Acc,0.2
+
+Quiz.SetLabel,QuizLabel
+Quiz.SetLabelOpacity,1,3
+
+Set,color,"0xffffffff"
+
 Delay,0.1
 
-#Quiz.Initialize,10,1,Rate,1,0.2
-Quiz.SetPath,"c:/Quizone/Quizes/ThaiKings/"
-Quiz.LoadImage,0,"1.png",Scale,Scale
-Quiz.LoadImage,1,"2.png",Scale,Scale
-Quiz.LoadImage,2,"3.png",Scale,Scale
-Quiz.LoadImage,3,"4.png",Scale,Scale
-Quiz.LoadImage,4,"5.png",Scale,Scale
-Quiz.LoadImage,5,"6.png",Scale,Scale
-Quiz.LoadImage,6,"7.png",Scale,Scale
-Quiz.LoadImage,7,"8.png",Scale,Scale
-Quiz.LoadImage,8,"9.png",Scale,Scale
-Quiz.LoadImage,9,"10.png",Scale,Scale
-Quiz.LoadImage,10,"frame.png",5,5,0
+#Quiz.LoadBG,"bg.jpg"
+#Quiz.SetBGOpacity,0
+Set,Interval,0.2
+Quiz.LoadImage,0,"01.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,1,"02.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,2,"03.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,3,"04.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,4,"05.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,5,"06.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,6,"07.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,7,"08.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,8,"09.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,9,"10.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadFrame,"Frame.png"
+Quiz.ShowFrame,1
+
 
 Script.RunScript,QuizStart
 

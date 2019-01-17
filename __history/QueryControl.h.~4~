@@ -1,0 +1,38 @@
+//---------------------------------------------------------------------------
+
+#ifndef QueryControlH
+#define QueryControlH
+//---------------------------------------------------------------------------
+
+#include "CommandExecuter.h"
+
+#include "MySqlModule.h"
+#include <System.JSON.hpp>
+
+//---------------------------------------------------------------------------
+
+class TQuery
+{
+public:
+TQuery();
+string host;
+string username;
+string password;
+string query;
+int ActiveContent;
+unsigned long Last_time[255];
+};
+
+//---------------------------------------------------------------------------
+
+class TQueryControl : public TCommandExecuter
+{
+private:
+
+
+public:
+__fastcall TQueryControl(bool CreateSuspended,TCommandQueue* Commands,TQuery *Query);
+__fastcall ~TQueryControl();
+};
+
+#endif

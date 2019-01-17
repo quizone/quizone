@@ -1,0 +1,52 @@
+#Quiz name:
+#values Initialization
+
+Query.Set,QuizID,4
+Set,Rate,0.002
+Set,Scale,0.55
+Set,Acc,20
+Set,LabelYOffset,5
+Set,AddNumber,1
+Set,NumOfItems,12
+Set,QuizLabel,"People faces"
+Quiz.SetPath,"Quizes/faces/"
+
+#Play initialization
+Quiz.Opacity,0,0
+Quiz.Initialize,NumOfItems,1,Rate,Acc,0.2
+
+Quiz.SetLabel,QuizLabel
+Quiz.SetLabelOpacity,1,3
+Set,color,"0xffffaa88"
+Delay,0.1
+
+#Quiz.LoadBG,"bg.png"
+#Quiz.SetBGOpacity,0
+Quiz.LoadImage,0,"01.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,1,"02.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,2,"03.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,3,"04.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,4,"05.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,5,"06.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,6,"07.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,7,"08.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,8,"09.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,9,"10.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,10,"11.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,11,"12.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadFrame,"Frame.png"
+Quiz.ShowFrame,1
+
+Script.RunScript,QuizStart

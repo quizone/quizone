@@ -5,7 +5,7 @@
 
 #include "CommandExecuter.h"
 
-#define MAX_SCRIPT 30
+#define MAX_SCRIPT 10
 
 class TScripts : public TCommandExecuter
 {

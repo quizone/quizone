@@ -8,71 +8,14 @@
 
 //---------------------------------------------------------------------------
 
-wstring UTF8toUnicode(const string& s)
-{
-	wstring ws;
-	wchar_t wc;
-	for( int i = 0;i < s.length(); )
-	{
-		char c = s[i];
-		if ( (c & 0x80) == 0 )
-		{
-			wc = c;
-			++i;
-		}
-		else if ( (c & 0xE0) == 0xC0 )
-		{
-			wc = (s[i] & 0x1F) << 6;
-			wc |= (s[i+1] & 0x3F);
-			i += 2;
-		}
-		else if ( (c & 0xF0) == 0xE0 )
-		{
-			wc = (s[i] & 0xF) << 12;
-			wc |= (s[i+1] & 0x3F) << 6;
-			wc |= (s[i+2] & 0x3F);
-			i += 3;
-		}
-		else if ( (c & 0xF8) == 0xF0 )
-		{
-			wc = (s[i] & 0x7) << 18;
-			wc |= (s[i+1] & 0x3F) << 12;
-			wc |= (s[i+2] & 0x3F) << 6;
-			wc |= (s[i+3] & 0x3F);
-			i += 4;
-		}
-		else if ( (c & 0xFC) == 0xF8 )
-		{
-			wc = (s[i] & 0x3) << 24;
-			wc |= (s[i] & 0x3F) << 18;
-			wc |= (s[i] & 0x3F) << 12;
-			wc |= (s[i] & 0x3F) << 6;
-			wc |= (s[i] & 0x3F);
-			i += 5;
-		}
-		else if ( (c & 0xFE) == 0xFC )
-		{
-			wc = (s[i] & 0x1) << 30;
-			wc |= (s[i] & 0x3F) << 24;
-			wc |= (s[i] & 0x3F) << 18;
-			wc |= (s[i] & 0x3F) << 12;
-			wc |= (s[i] & 0x3F) << 6;
-			wc |= (s[i] & 0x3F);
-			i += 6;
-		}
-		ws += wc;
-	}
-	return ws;
-}
-
-//---------------------------------------------------------------------------
-
 TQuery::TQuery()
 {
 host = "";
 username= "";
 password= "";
 query= "";
+ActiveContent = 0;
+for (int i=0;i<255;i++) {Last_time[i]=0; }
 }
 
 //---------------------------------------------------------------------------
@@ -123,8 +66,47 @@ RETURN_SUCCESS
 //-----------------------------------------------------------------------------
 
 bool ReadQuizCommand	(TCommand *Command,void* Object)
-{
-RETURN_SUCCESS
+{ // content id
+int Num;
+CHECK_PARAM_NUM(Num,1)
+TQuery* Query = (TQuery*)Object;
+TStringStream* Str;
+Str = new TStringStream;
+Str->SetSize(2550);
+char charstr[255];
+int id = Command->Param(0)->GetAsNumber();
+
+sprintf(charstr, "https://quizone.ru/q/api/get_last_user_answer.php?password=123456789&quizone=1&category=%d",id);
+try{
+DataModule2->NetHTTPClient1->Get(charstr,Str);
+}catch(exception& e)
+	{
+	const char* s = e.what();
+	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+	return false;
+	}
+UnicodeString ResStr = Str->DataString;
+wchar_t* ss;
+ss=ResStr.c_str();
+ResStr = ss;
+
+TJSONObject *JSON = (TJSONObject*)TJSONObject::ParseJSONValue(ResStr);
+TJSONPair *result = JSON->Get("result");
+String value = result->JsonValue->ToString();
+if (value=="\"Error\"") {
+	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+	return false;
+	}
+if (value=="\"Ok\"") {
+	TJSONPair *data = JSON->Get("data");
+	TJSONObject *user = (TJSONObject*) data->JsonValue;
+	TJSONPair *usertime = user->Get("last_time");
+	String time = usertime->JsonValue->ToString();
+	Query->Last_time[id] = StrToInt(time) + 1;
+	RETURN_SUCCESS
+	}
+Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::UNKNOWN));
+return false;
 }
 //-----------------------------------------------------------------------------
 
@@ -135,115 +117,91 @@ TStringStream* Str;
 TStringStream* Str1;
 TStringStream* Str2;
 Str = new TStringStream;
-Str->SetSize(255);
+Str->SetSize(2550);
 char charstr[255];
 
 Str1 = new TStringStream;
-Str1->SetSize(255);
+Str1->SetSize(2550);
 Str2 = new TStringStream;
-Str2->SetSize(255);
+Str2->SetSize(2550);
 
 TStringList *Strs;
 Strs = new TStringList;
 
-DataModule2->NetHTTPClient1->Get(L"https://quizone.ru/test/GetId.php",Str);
-UnicodeString ResStr = Str->DataString;
-int CurId;
-
-if (Str!="") CurId = StrToInt (ResStr);
-else CurId=1;
-static LastId = 1;
-
-int Answer;
-int Question;
-if (LastId != CurId)   // this is new answer
-	{
-	int Id = LastId+1;
-		if (Id>200) Id=1;
-		sprintf(charstr, "https://quizone.ru/test/GetAnswer.php?q=%d",Id-1);
-		//UnicodeString InStr = (UnicodeString)charstr;
-		DataModule2->NetHTTPClient1->Get(charstr,Str1); // Post(L"http://quizone.ru/test/3.php",Strs,Str);
-		ResStr = Str1->DataString;
-		Answer = StrToInt (ResStr);
-
-		sprintf(charstr, "https://quizone.ru/test/GetQuestion.php?q=%d",Id-1);
-		DataModule2->NetHTTPClient1->Get(charstr,Str2); // Post(L"http://quizone.ru/test/3.php",Strs,Str);
-		ResStr = Str2->DataString;
-		Question = StrToInt (ResStr);
-
-		TCommand::Vars->operator []("ActionQuestion") = Question;// Question;
-		TCommand::Vars->operator []("ActionAnswer") = Answer;
-		TCommand::Vars->operator []("NewAnswer") = 1;
-		LastId = Id;
-	}
-	else
-	{
-	TCommand::Vars->operator []("NewAnswer") = 0;
-	}
-
-RETURN_SUCCESS
-
-//DataModule2->NetHTTPClient1->Get(L"https://quizone.ru/test/GetAnswer.php?q=",Str1); // Post(L"http://quizone.ru/test/3.php",Strs,Str);
-//DataModule2->NetHTTPClient1->Get(L"https://quizone.ru/test/GetQuestion.php",Str2); // Post(L"http://quizone.ru/test/3.php",Strs,Str);
-
-//UnicodeString ResStr = Str1->DataString;
-//int Answer = StrToInt (ResStr);
-
-//ResStr = Str2->DataString;
-//int Question = StrToInt (ResStr);
-
-//static int ans = 1;
-//nt IsNew = 0;
-
-//if (Question!=ans) IsNew = 1;
-//ans = Question;
-
-//if (IsNew == 1) {
- //	 int t=1;
-//}
-
-
-//RETURN_SUCCESS
-
-/*
-char str[255];
-sprintf(str,"User ID=%s;Password=%s;Data Source=%s",Query->username.c_str() ,Query->password.c_str(),Query->host.c_str());
+ sprintf(charstr, "https://quizone.ru/q/api/get_user_answers.php?password=123456789&quizone=1&category=%d&offset_time=%d",Query->ActiveContent,Query->Last_time[Query->ActiveContent]);
 try{
-DataModule2->MyConnection1->ConnectString =  str;// L"User ID=foralexon;Password=m23dVwBb4;Data Source=mysql.foralexon.myjino.ru" ;
-if (!DataModule2->MyConnection1->Connected )
-	DataModule2->MyConnection1->Connect();
-if (DataModule2->MyConnection1->Connected )
-	{
-	DataModule2->MyTable1->Connection->Database = L"foralexon";
-	DataModule2->MyTable1->Active = true;
-	int r = DataModule2->MyTable1->FetchRows;
-	int Question = DataModule2->MyTable1->FieldByName(L"Question")->AsInteger;
-	int Answer = DataModule2->MyTable1->FieldByName(L"Answer")->AsInteger;
-
-	if (Question!=0) {
-		char str[255];
-		sprintf(str,"DELETE FROM `foralexon`.`actions` WHERE `Question`= %d LIMIT 1" ,Question);
-		DataModule2->MyCommand1->SQL->Clear();
-		DataModule2->MyCommand1->SQL->Add((UnicodeString)str);
-		DataModule2->MyCommand1->Execute();
-		DataModule2->MyConnection1->Disconnect();
-		TCommand::Vars->operator []("ActionQuestion") = Question;
-		TCommand::Vars->operator []("ActionAnswer") = Answer;
-		TCommand::Vars->operator []("NewAnswer") = 1;
-		}
-
-	RETURN_SUCCESS
-	}
-}
-catch(exception& e)
+ DataModule2->NetHTTPClient1->Get(charstr,Str);
+ }catch(exception& e)
 	{
 	const char* s = e.what();
 	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
 	return false;
 	}
-Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+
+ UnicodeString ResStr;
+ wchar_t* ss;
+ ResStr = Str->DataString;
+ ss=ResStr.c_str();
+ ResStr = ss;
+ TJSONObject* JSON = (TJSONObject*)TJSONObject::ParseJSONValue(ResStr);
+ TJSONPair* result = JSON->Get("result");
+ String value = result->JsonValue->ToString();
+ if (value=="\"Error\"") {
+		TCommand::Vars->operator []("NewAnswer") = 0;
+		RETURN_SUCCESS
+		}
+ if (value=="\"Ok\"") {
+		TJSONPair* data = JSON->Get("data");
+		TJSONArray *jsonArray = (TJSONArray*) data->JsonValue;
+		for (int i=0; i<jsonArray->Count;i++)
+			{
+			jsonArray->Items[i];
+			TJSONObject *arraystring = (TJSONObject*)jsonArray->Items[i];
+			TJSONPair *res = arraystring->Get("result");
+			value = res->JsonValue->ToString();
+			while (value.Pos("\"")>0)
+				value.Delete(value.Pos("\""),1);
+			int point = StrToInt(value);
+
+			TJSONPair *answerstring = arraystring->Get("answer");
+			value = answerstring->JsonValue->ToString();
+			while (value.Pos("\"")>0)
+				value.Delete(value.Pos("\""),1);
+			int answer = StrToInt(value);
+
+			TJSONPair *questionstring = arraystring->Get("QuestionID");
+			value = questionstring->JsonValue->ToString();
+			while (value.Pos("\"")>0)
+				value.Delete(value.Pos("\""),1);
+			int question = StrToInt(value);
+
+			TJSONPair *timestring = arraystring->Get("time");
+			value = timestring->JsonValue->ToString();
+			while (value.Pos("\"")>0)
+				value.Delete(value.Pos("\""),1);
+			unsigned long time = StrToInt(value);
+
+			TJSONPair *userstring = arraystring->Get("user");
+			value = userstring->JsonValue->ToString();
+			while (value.Pos("\"")>0)
+				value.Delete(value.Pos("\""),1);
+
+			wstring s = value.c_str();
+
+			TCommand::Vars->operator []("ActionQuestion") = question;
+			TCommand::Vars->operator []("ActionAnswer") = answer;
+			TCommand::StringVars->operator []("User") = UnicodeToUTF8(s);
+			TCommand::Vars->operator []("NewAnswer") = 1;
+
+			Query->Last_time[Query->ActiveContent] = time+1;
+
+			//finish here with only one
+			}
+		// no new
+		RETURN_SUCCESS
+		}
+Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::UNKNOWN));
 return false;
-*/
 }
 
 //-----------------------------------------------------------------------------
@@ -259,9 +217,11 @@ Str->SetSize(255);
 char charstr[255];
 
 int id = Command->Param(0)->GetAsNumber();
-sprintf(charstr, "https://quizone.ru/test/SetQuizId.php?q=%d",id);
+sprintf(charstr, "https://quizone.ru/q/api/set_category.php?password=123456789&quizone=1&category=%d",id);
 try{
 DataModule2->NetHTTPClient1->Get(charstr,Str);
+Query->ActiveContent = id;
+
 }catch(exception& e)
 	{
 	const char* s = e.what();
@@ -370,5 +330,8 @@ __fastcall TQueryControl::~TQueryControl()
 delete Object;
 }
 //---------------------------------------------------------------------------
+
+
+
 
 

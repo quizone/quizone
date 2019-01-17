@@ -13,6 +13,7 @@ object Form2: TForm2
   OnKeyDown = FormKeyDown
   DesignerMasterStyle = 0
   object Timer1: TTimer
+    Enabled = False
     Interval = 32
     OnTimer = Timer1Timer
     Left = 272
@@ -21,14 +22,14 @@ object Form2: TForm2
   object Memo1: TMemo
     Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
     DataDetectorTypes = []
-    Position.X = 160.000000000000000000
+    Position.X = 112.000000000000000000
     Position.Y = 16.000000000000000000
-    Size.Width = 465.000000000000000000
+    Size.Width = 513.000000000000000000
     Size.Height = 465.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
-    Viewport.Width = 465.000000000000000000
-    Viewport.Height = 465.000000000000000000
+    Viewport.Width = 509.000000000000000000
+    Viewport.Height = 461.000000000000000000
   end
   object CheckBox1: TCheckBox
     IsChecked = True

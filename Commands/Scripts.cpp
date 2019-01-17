@@ -111,7 +111,7 @@ RETURN_SUCCESS
 //----------------------------------------------------------
 
 bool RepeatCommand       (TCommand *Command, void *Object)
-{
+{   // repeat numbers, wait time, commands...
 TScripts* Script = (TScripts*)Object;
 int Num;
 CHECK_PARAM_NUM(Num,3)

@@ -1,0 +1,40 @@
+object Form2: TForm2
+  Left = 0
+  Top = 0
+  Caption = 'Form2'
+  ClientHeight = 480
+  ClientWidth = 640
+  Fill.Color = claBlack
+  Fill.Kind = Solid
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
+  DesignerMasterStyle = 0
+  object Timer1: TTimer
+    Interval = 32
+    OnTimer = Timer1Timer
+    Left = 272
+    Top = 216
+  end
+  object Memo1: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Position.X = 160.000000000000000000
+    Position.Y = 16.000000000000000000
+    Size.Width = 465.000000000000000000
+    Size.Height = 465.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Viewport.Width = 461.000000000000000000
+    Viewport.Height = 461.000000000000000000
+  end
+  object CheckBox1: TCheckBox
+    IsChecked = True
+    Position.X = 136.000000000000000000
+    Position.Y = 16.000000000000000000
+    TabOrder = 2
+    Text = 'CheckBox1'
+  end
+end

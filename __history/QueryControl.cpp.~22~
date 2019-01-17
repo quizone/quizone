@@ -1,0 +1,447 @@
+//---------------------------------------------------------------------------
+
+#pragma hdrstop
+
+#include "QueryControl.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+
+//---------------------------------------------------------------------------
+
+wstring UTF8toUnicode(const string& s)
+{
+	wstring ws;
+	wchar_t wc;
+	for( int i = 0;i < s.length(); )
+	{
+		char c = s[i];
+		if ( (c & 0x80) == 0 )
+		{
+			wc = c;
+			++i;
+		}
+		else if ( (c & 0xE0) == 0xC0 )
+		{
+			wc = (s[i] & 0x1F) << 6;
+			wc |= (s[i+1] & 0x3F);
+			i += 2;
+		}
+		else if ( (c & 0xF0) == 0xE0 )
+		{
+			wc = (s[i] & 0xF) << 12;
+			wc |= (s[i+1] & 0x3F) << 6;
+			wc |= (s[i+2] & 0x3F);
+			i += 3;
+		}
+		else if ( (c & 0xF8) == 0xF0 )
+		{
+			wc = (s[i] & 0x7) << 18;
+			wc |= (s[i+1] & 0x3F) << 12;
+			wc |= (s[i+2] & 0x3F) << 6;
+			wc |= (s[i+3] & 0x3F);
+			i += 4;
+		}
+		else if ( (c & 0xFC) == 0xF8 )
+		{
+			wc = (s[i] & 0x3) << 24;
+			wc |= (s[i] & 0x3F) << 18;
+			wc |= (s[i] & 0x3F) << 12;
+			wc |= (s[i] & 0x3F) << 6;
+			wc |= (s[i] & 0x3F);
+			i += 5;
+		}
+		else if ( (c & 0xFE) == 0xFC )
+		{
+			wc = (s[i] & 0x1) << 30;
+			wc |= (s[i] & 0x3F) << 24;
+			wc |= (s[i] & 0x3F) << 18;
+			wc |= (s[i] & 0x3F) << 12;
+			wc |= (s[i] & 0x3F) << 6;
+			wc |= (s[i] & 0x3F);
+			i += 6;
+		}
+		ws += wc;
+	}
+	return ws;
+}
+
+//---------------------------------------------------------------------------
+
+string UnicodeToUTF8( const wstring& ws )
+{
+    string s;
+    for( int i = 0;i < ws.size(); ++i )
+    {
+        wchar_t wc = ws[i];
+        if ( 0 <= wc && wc <= 0x7f )
+        {
+            s += (char)wc;
+        }
+        else if ( 0x80 <= wc && wc <= 0x7ff )
+        {
+            s += ( 0xc0 | (wc >> 6) );
+            s += ( 0x80 | (wc & 0x3f) );
+        }
+        else if ( 0x800 <= wc && wc <= 0xffff )
+        {
+            s += ( 0xe0 | (wc >> 12) );
+            s += ( 0x80 | ((wc >> 6) & 0x3f) );
+            s += ( 0x80 | (wc & 0x3f) );
+        }
+        else if ( 0x10000 <= wc && wc <= 0x1fffff )
+        {
+            s += ( 0xf0 | (wc >> 18) );
+            s += ( 0x80 | ((wc >> 12) & 0x3f) );
+            s += ( 0x80 | ((wc >> 6) & 0x3f) );
+            s += ( 0x80 | (wc & 0x3f) );
+        }
+        else if ( 0x200000 <= wc && wc <= 0x3ffffff )
+        {
+            s += ( 0xf8 | (wc >> 24) );
+            s += ( 0x80 | ((wc >> 18) & 0x3f) );
+            s += ( 0x80 | ((wc >> 12) & 0x3f) );
+            s += ( 0x80 | ((wc >> 6) & 0x3f) );
+            s += ( 0x80 | (wc & 0x3f) );
+        }
+        else if ( 0x4000000 <= wc && wc <= 0x7fffffff )
+        {
+            s += ( 0xfc | (wc >> 30) );
+            s += ( 0x80 | ((wc >> 24) & 0x3f) );
+            s += ( 0x80 | ((wc >> 18) & 0x3f) );
+            s += ( 0x80 | ((wc >> 12) & 0x3f) );
+            s += ( 0x80 | ((wc >> 6) & 0x3f) );
+            s += ( 0x80 | (wc & 0x3f) );
+        }
+    }
+    return s;
+}
+
+//---------------------------------------------------------------------
+
+TQuery::TQuery()
+{
+host = "";
+username= "";
+password= "";
+query= "";
+ActiveContent = 0;
+for (int i=0;i<255;i++) {Last_time[i]=0; }
+}
+
+//---------------------------------------------------------------------------
+
+namespace{
+
+bool SetCommand	   		(TCommand *Command,void* Object);
+bool InitializeCommand	(TCommand *Command,void* Object);
+bool QueryCommand 	    (TCommand *Command,void* Object);
+bool SetQueryCommand   	(TCommand *Command,void* Object);
+bool SeteQueryIdCommand 	    (TCommand *Command,void* Object);
+bool ReadActionCommand 	    (TCommand *Command,void* Object);
+bool ReadQuizCommand 	    (TCommand *Command,void* Object);
+
+//-----------------------------------------------------------------------------
+
+bool SetCommand(TCommand *Command, void *Object)
+{
+int Num;
+CHECK_PARAM_NUM(Num,2)
+TQuery* Query = (TQuery*)Object;
+double value=0;
+value = Command->Param(1)->GetAsNumber();
+
+TVars::const_iterator iter = TCommand::Vars->find(Command->Param(0)->GetAsString());
+	if (iter == TCommand::Vars->end())
+		{
+		TCommand::Vars->insert(std::make_pair(Command->Param(0)->GetAsString(),value));
+		}
+	else
+		TCommand::Vars->operator [](Command->Param(0)->GetAsString()) = value;
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool InitializeCommand	(TCommand *Command,void* Object)
+{  // host, username, password
+int Num;
+CHECK_PARAM_NUM(Num,3)
+TQuery* Query = (TQuery*)Object;
+Query->host = Command->Param(0)->GetAsString();
+Query->username = Command->Param(1)->GetAsString();
+Query->password = Command->Param(2)->GetAsString();
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+
+bool ReadQuizCommand	(TCommand *Command,void* Object)
+{ // content id
+int Num;
+CHECK_PARAM_NUM(Num,1)
+TQuery* Query = (TQuery*)Object;
+TStringStream* Str;
+Str = new TStringStream;
+Str->SetSize(2550);
+char charstr[255];
+int id = Command->Param(0)->GetAsNumber();
+
+sprintf(charstr, "https://quizone.ru/q/api/get_last_user_answer.php?password=123456789&quizone=1&category=%d",id);
+try{
+DataModule2->NetHTTPClient1->Get(charstr,Str);
+}catch(exception& e)
+	{
+	const char* s = e.what();
+	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+	return false;
+	}
+UnicodeString ResStr = Str->DataString;
+wchar_t* ss;
+ss=ResStr.c_str();
+ResStr = ss;
+
+TJSONObject *JSON = (TJSONObject*)TJSONObject::ParseJSONValue(ResStr);
+TJSONPair *result = JSON->Get("result");
+String value = result->JsonValue->ToString();
+if (value=="\"Error\"") {
+	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+	return false;
+	}
+if (value=="\"Ok\"") {
+	TJSONPair *data = JSON->Get("data");
+	TJSONObject *user = (TJSONObject*) data->JsonValue;
+	TJSONPair *usertime = user->Get("last_time");
+	String time = usertime->JsonValue->ToString();
+	Query->Last_time[id] = StrToInt(time) + 1;
+	RETURN_SUCCESS
+	}
+Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::UNKNOWN));
+return false;
+}
+//-----------------------------------------------------------------------------
+
+bool ReadActionCommand	(TCommand *Command,void* Object)
+{  // none it write the value to variables
+TQuery* Query = (TQuery*)Object;
+TStringStream* Str;
+TStringStream* Str1;
+TStringStream* Str2;
+Str = new TStringStream;
+Str->SetSize(2550);
+char charstr[255];
+
+Str1 = new TStringStream;
+Str1->SetSize(2550);
+Str2 = new TStringStream;
+Str2->SetSize(2550);
+
+TStringList *Strs;
+Strs = new TStringList;
+
+ sprintf(charstr, "https://quizone.ru/q/api/get_user_answers.php?password=123456789&quizone=1&category=%d&offset_time=%d",Query->ActiveContent,Query->Last_time[Query->ActiveContent]);
+try{
+ DataModule2->NetHTTPClient1->Get(charstr,Str);
+ }catch(exception& e)
+	{
+	const char* s = e.what();
+	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+	return false;
+	}
+
+ UnicodeString ResStr;
+ wchar_t* ss;
+ ResStr = Str->DataString;
+ ss=ResStr.c_str();
+ ResStr = ss;
+ TJSONObject* JSON = (TJSONObject*)TJSONObject::ParseJSONValue(ResStr);
+ TJSONPair* result = JSON->Get("result");
+ String value = result->JsonValue->ToString();
+ if (value=="\"Error\"") {
+		TCommand::Vars->operator []("NewAnswer") = 0;
+		RETURN_SUCCESS
+		}
+ if (value=="\"Ok\"") {
+		TJSONPair* data = JSON->Get("data");
+		TJSONArray *jsonArray = (TJSONArray*) data->JsonValue;
+		for (int i=0; i<jsonArray->Count;i++)
+			{
+			jsonArray->Items[i];
+			TJSONObject *arraystring = (TJSONObject*)jsonArray->Items[i];
+			TJSONPair *res = arraystring->Get("result");
+			value = res->JsonValue->ToString();
+			while (value.Pos("\"")>0)
+				value.Delete(value.Pos("\""),1);
+			int point = StrToInt(value);
+
+			TJSONPair *answerstring = arraystring->Get("answer");
+			value = answerstring->JsonValue->ToString();
+			while (value.Pos("\"")>0)
+				value.Delete(value.Pos("\""),1);
+			int answer = StrToInt(value);
+
+			TJSONPair *questionstring = arraystring->Get("QuestionID");
+			value = questionstring->JsonValue->ToString();
+			while (value.Pos("\"")>0)
+				value.Delete(value.Pos("\""),1);
+			int question = StrToInt(value);
+
+			TJSONPair *timestring = arraystring->Get("time");
+			value = timestring->JsonValue->ToString();
+			while (value.Pos("\"")>0)
+				value.Delete(value.Pos("\""),1);
+			unsigned long time = StrToInt(value);
+
+			TJSONPair *userstring = arraystring->Get("user");
+			value = userstring->JsonValue->ToString();
+			while (value.Pos("\"")>0)
+				value.Delete(value.Pos("\""),1);
+
+			wstring s = value.c_str();
+
+			TCommand::Vars->operator []("ActionQuestion") = question;
+			TCommand::Vars->operator []("ActionAnswer") = answer;
+			TCommand::StringVars->operator []("User") = UnicodeToUTF8(s);
+			TCommand::Vars->operator []("NewAnswer") = 1;
+
+			Query->Last_time[Query->ActiveContent] = time+1;
+
+			//finish here with only one
+			}
+		// no new
+		RETURN_SUCCESS
+		}
+Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::UNKNOWN));
+return false;
+}
+
+//-----------------------------------------------------------------------------
+bool SetQueryCommand	(TCommand *Command,void* Object)
+{
+int Num;
+CHECK_PARAM_NUM(Num,1)
+
+TQuery* Query = (TQuery*)Object;
+TStringStream* Str;
+Str = new TStringStream;
+Str->SetSize(255);
+char charstr[255];
+
+int id = Command->Param(0)->GetAsNumber();
+sprintf(charstr, "https://quizone.ru/q/api/set_category.php?password=123456789&quizone=1&category=%d",id);
+try{
+DataModule2->NetHTTPClient1->Get(charstr,Str);
+Query->ActiveContent = id;
+
+}catch(exception& e)
+	{
+	const char* s = e.what();
+	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+	return false;
+	}
+RETURN_SUCCESS
+}
+
+//-----------------------------------------------------------------------------
+bool SetQueryIdCommand	(TCommand *Command,void* Object)
+{
+int Num;
+CHECK_PARAM_NUM(Num,1)
+
+TQuery* Query = (TQuery*)Object;
+TStringStream* Str;
+Str = new TStringStream;
+Str->SetSize(255);
+char charstr[255];
+
+int id = Command->Param(0)->GetAsNumber();
+sprintf(charstr, "https://quizone.ru/test/SetId.php?q=%d",id);
+try{
+//DataModule2->NetHTTPClient1->HandleRedirects = true;
+DataModule2->NetHTTPClient1->Get(charstr,Str);
+}catch(exception& e)
+	{
+	const char* s = e.what();
+	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+	return false;
+	}
+RETURN_SUCCESS
+}
+//-----------------------------------------------------------------------------
+
+bool QueryCommand	(TCommand *Command,void* Object)
+{  // mysql command
+int Num;
+CHECK_PARAM_NUM(Num,1)
+TQuery* Query = (TQuery*)Object;
+
+RETURN_SUCCESS
+
+AnsiString Str;
+	for (int i=0; i < Command->GetParamCount(); i++) {
+			if (Command->Param(i)->IsNumber())
+				Str = Str + FloatToStr(Command->Param(i)->GetAsNumber());
+			else
+				Str = Str + (AnsiString)(Command->Param(i)->GetAsString().c_str());
+			}
+Query->query = Str.c_str();
+wstring ss = UTF8toUnicode(Query->query);
+
+char str[255];
+//sprintf(str,"User ID=%s;Password=%s;Data Source=%s",Query->username.c_str() ,Query->password.c_str(),Query->host.c_str());
+//try{
+
+//DataModule2->MyConnection1->ConnectString =  str;// L"User ID=foralexon;Password=m23dVwBb4;Data Source=mysql.foralexon.myjino.ru" ;
+//if (!DataModule2->MyConnection1->Connected )
+//	DataModule2->MyConnection1->Connect();
+//if (DataModule2->MyConnection1->Connected )
+//	{
+// 	Query->query = Command->Param(0)->GetAsString();
+//	UnicodeString s = (UnicodeString)Query->query.c_str();
+//   DataModule2->MyCommand1->SQL->Clear();
+//   DataModule2->MyCommand1->SQL->Add((UnicodeString)ss.c_str());
+//   DataModule2->MyCommand1->Execute();
+//   DataModule2->MyConnection1->Disconnect();
+//	RETURN_SUCCESS
+//	}
+//}
+//catch(exception& e)
+//	{
+//	const char* s = e.what();
+//	Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+//	return false;
+//	}
+//Command->InsertResult(CommandErrorCodeAndMessage(COMMAND::NOT_CONNECTED));
+//return false;
+}
+
+};
+
+
+//End of namespace
+//-----------------------------------------------------------------------------
+
+__fastcall TQueryControl::TQueryControl(bool CreateSuspended,TCommandQueue* Commands, TQuery* Query)
+: TCommandExecuter(CreateSuspended,Commands)
+{
+Object = (TQuery*)Query;
+mapCommands.insert(std::make_pair("Set", &SetCommand));
+mapCommands.insert(std::make_pair("Initialize", &InitializeCommand));
+mapCommands.insert(std::make_pair("ReadQuiz", &ReadQuizCommand));
+mapCommands.insert(std::make_pair("ReadAction", &ReadActionCommand));
+mapCommands.insert(std::make_pair("Query", &QueryCommand));
+mapCommands.insert(std::make_pair("SetQuery", &SetQueryCommand));
+mapCommands.insert(std::make_pair("SetQueryId", &SetQueryIdCommand));
+
+}
+//---------------------------------------------------------------------------
+
+__fastcall TQueryControl::~TQueryControl()
+{
+delete Object;
+}
+//---------------------------------------------------------------------------
+
+
+
+
+

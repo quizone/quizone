@@ -6,9 +6,9 @@
 #include "Unit1.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
-#pragma link "DBAccess"
-#pragma link "MyAccess"
-#pragma link "MemDS"
+//#pragma link "DBAccess"
+//#pragma link "MyAccess"
+//#pragma link "MemDS"
 #pragma resource "*.fmx"
 TForm1 *Form1;
 
@@ -22,13 +22,17 @@ Form1->Top = 0;
 Form1->Left=0;
 PanelIsPressed = false;
 InsertLog = false;
+//Form1->Transparency = true;
 //Form1->Width = 3000;
 //Form1->Height = 1030;
+//MediaPlayerControl1->Parent = Form1;
+//MediaPlayer1->Play();
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TForm1::FormCreate(TObject *Sender)
 {
+
 //IdFTP1->Connect();
 //if (IdFTP1->Connected()) {
   //	IdFTP1->ChangeDir("test");
@@ -39,54 +43,173 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 
 Panel1->Visible = false;
 
+//TByteDynArray A;
+//A.set_length(5); A[0] = 'p'; A[1] = 'a'; A[2] = 'u'; A[3] = 's'; A[4] = 'e';
+//IdUDPClient1->SendBuffer(A);
 
 CMD = new TCommandQueue;
 MC = new TMainControl(false,CMD);
 
 TCommandQueue* UICommands = new TCommandQueue;
 MC->UICommands = UICommands;
-Images = new TImage*[255];
-Labels = new TLabel*[255];
-ItemLabels = new TLabel*[255];
+Images = new TImage*[55];
+ImagesShadow = new TImage*[55];
+ImagesFrame = new TImage*[55];
+ItemLabels = new TLabel*[55];
+Labels = new TLabel*[55];
+LabelsImages = new TImage*[55];
+
 
 MainLabel = new TLabel(Form1);
-MotionsX = new TAxisMotion[255];
-MotionsY = new TAxisMotion[255];
-LastX = new double[255];
-LastY = new double[255];
-for (int i=0; i < 255; i++) {
+MotionsX = new TAxisMotion[55];
+MotionsY = new TAxisMotion[55];
+LastX = new double[55];
+LastY = new double[55];
+for (int i=0; i < 55; i++) {
 	Images[i] = new TImage(Form1);
-	Labels[i] = new TLabel(Form1);
+	LabelsImages[i] = new TImage(Form1);
+	ImagesShadow[i] = new TImage(Form1);
+	ImagesFrame[i] = new TImage(Form1);
 	ItemLabels[i] = new TLabel(Form1);
+	ItemLabels[i]->Parent = Form1;
+	LabelsImages[i]->Parent = Form1;
 	Images[i]->Parent = Form1;
+	ImagesShadow[i]->Parent = Form1;
+	ImagesFrame[i]->Parent = Form1;
+	Labels[i] = new TLabel(Form1);
 	Labels[i]->Parent = Form1;
-    ItemLabels[i]->Parent = Form1;
 	MotionsX[i].SetImmediateTarget(0,0,false);
 	MotionsY[i].SetImmediateTarget(0,0,false);
 	}
 MainLabel->Parent = Form1;
 MC->Commands->CreateCommand("Script.LoadScript,\"autorun.msc\",0,1");
 
-Image1->Bitmap->LoadFromFile("wall2.jpg");
+//Image1->Bitmap->LoadFromFile("wall2.jpg");
+//BackImage->Bitmap->LoadFromFile("black.png");
+//BackImage->Position->X = 0;
+//BackImage->Position->Y = 0;
+//BackImage->Scale->X = 100;
+//BackImage->Scale->Y = 2;
+//BackImage->Bitmap->Resize(Form1->Width*3,Form1->Height*2);
+//BackImage->Size->Width = Form1->Width;
+//BackImage->Size->Height = Form1->Height;
+//BackImage->Scale->X = 2;
+
+
 Image1->Position->X = 0;
 Image1->Position->Y = 0;
-
 Image1->Size->Width = Form1->Width;
 Image1->Size->Height = Form1->Height;
+Image1->BringToFront();
+
+BackImage = new TImage(Form1);
+BackImage->Parent = Form1;
+BackImage->Bitmap->LoadFromFile("black.png");
+BackImage->Position->X = 0;
+BackImage->Position->Y = 0;
+BackImage->Width = BackImage->Bitmap->Width;
+BackImage->Height = BackImage->Bitmap->Height;
+BackImage->Bitmap->Resize(BackImage->Bitmap->Width*10,BackImage->Bitmap->Height*10);
+BackImage->Width = BackImage->Bitmap->Width;
+BackImage->Height = BackImage->Bitmap->Height;
+BackImage->SendToBack();
+BackImage->Opacity = 1;
+
+	for (int i=0; i < 55; i++) { ImagesShadow[i]->BringToFront();}
+	for (int i=0; i < 55; i++) { ImagesFrame[i]->BringToFront(); }
+	for (int i=0; i < 55; i++) { Images[i]->BringToFront();      }
+	for (int i=0; i < 55; i++) { ItemLabels[i]->BringToFront();  }
+	for (int i=0; i < 55; i++) { Labels[i]->BringToFront();      }
+	for (int i=0; i < 55; i++) { LabelsImages[i]->BringToFront();}
+
+//TBrushKind s;
+//TBrush* Brush = new TBrush(TBrushKind::Solid,0xff000000);
+//BackImage->Canvas->FillRect(TRectF(TPointF(0,0),Form1->Width,Form1->Height),1000.0,1000.0,TCorners(),1.0,Brush,TCornerType::Round);
 
 //for (int i=0; i < 100; i++) {
-//  Images[i]->Bitmap->LoadFromFile("c:\\Quizone\\Quizes\\ThaiKings\\1.png");	
+//  Images[i]->Bitmap->LoadFromFile("c:\\Quizone\\Quizes\\ThaiKings\\1.png");
 //}
 
 //Image1->RotationAngle = 45;
 //Image1->Scale->X = 0.5;
+
+Timer1->Enabled = true;
+
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TForm1::Timer1Timer(TObject *Sender)
 {
-TotalWidth = 1680; //3840;
+TotalWidth = Form1->Width - Images[0]->Bitmap->Width ;//*1.5; //1680; //3840;
+
 TQuiz* Quiz = (TQuiz*)MC->QuizControl->GetObject();
+
+if (Quiz->ReloadBG) {
+	string str = Quiz->Path;
+	str = str + Quiz->BGFilename;
+	if (Quiz->BGFilename=="") {
+		Quiz->ShowBG = false;
+		}
+	else
+		{
+		Image1->Bitmap->LoadFromFile(str.c_str());
+		Image1->Bitmap->Resize(Form1->Width,Image1->Bitmap->Height * ((double)Form1->Width/Image1->Bitmap->Width));
+		Image1->Size->Width = Form1->Width;
+		Image1->Size->Height = Image1->Bitmap->Height;
+		Quiz->ReloadBG = false;
+		}
+	}
+
+if (Quiz->ReloadFrame) {
+	string str = Quiz->Path;
+	str = str + Quiz->FrameFileName;
+	if (Quiz->FrameFileName=="") {
+		Quiz->ShowFrame = false;
+		}
+	else
+		{
+		for (int i=0; i < Quiz->NumItems; i++)
+			{
+			if (Quiz->Items[i].AddID == 2) TotalWidth = TotalWidth - 200;
+			ImagesFrame[i]->Bitmap->LoadFromFile(str.c_str());
+			char charstr[255];
+			sprintf(charstr,"QR//%d.png",i+1);
+			LabelsImages[i]->Bitmap->LoadFromFile(charstr);
+
+			double ScaleX = Quiz->Items[i].SizeX;
+			double ScaleY = Quiz->Items[i].SizeY;
+			ImagesFrame[i]->Bitmap->Resize(ImagesFrame[i]->Bitmap->Width * ScaleX  ,ImagesFrame[i]->Bitmap->Height * ScaleY);
+			ImagesFrame[i]->Size->Width = ImagesFrame[i]->Bitmap->Width * ScaleX;
+			ImagesFrame[i]->Size->Height = ImagesFrame[i]->Bitmap->Height * ScaleY;
+
+			ImagesShadow[i]->Bitmap->LoadFromFile(str.c_str());
+			ImagesShadow[i]->Bitmap->Resize(ImagesShadow[i]->Bitmap->Width * ScaleX  ,ImagesShadow[i]->Bitmap->Height * ScaleY);
+			ImagesShadow[i]->Size->Width = ImagesShadow[i]->Bitmap->Width * ScaleX;
+			ImagesShadow[i]->Size->Height = ImagesShadow[i]->Bitmap->Height * ScaleY;
+			int X, Y;
+			TBitmapData bm;
+			if (ImagesShadow[i]->Bitmap->Map(TMapAccess::maReadWrite, bm) )
+			for (X = 0; X < ImagesShadow[i]->Bitmap->Width; X++)
+			{
+				for (Y = 0; Y < ImagesShadow[i]->Bitmap->Height; Y++)
+				{
+				if (bm.GetPixel(X,Y) > 0)
+				bm.SetPixel(X, Y, claBlack);
+				}
+			}
+			ImagesShadow[i]->Bitmap->Unmap(bm);
+			}
+		Quiz->ReloadFrame = false;
+		//MediaPlayerControl1->BringToFront();
+		//MediaPlayerControl1->Visible = true;
+		//MediaPlayerControl1->Width = 500;
+		//MediaPlayerControl1->Height = 500;
+		//MediaPlayerControl1->Position->X = 500;
+		//MediaPlayerControl1->Position->Y = 500;
+		//MediaPlayer1->Play();
+		}
+	}
+
 for (int i=0; i < Quiz->NumItems; i++) {
 		if (Quiz->Items[i].Reload) {
 			string str = Quiz->Path;
@@ -96,6 +219,12 @@ for (int i=0; i < Quiz->NumItems; i++) {
 		//	Images[i]->Bitmap->Resize(100,100);
 		try{
 			Images[i]->Bitmap->LoadFromFile(str.c_str());
+			double ScaleX = Quiz->Items[i].SizeX;
+			double ScaleY = Quiz->Items[i].SizeY;
+
+			Images[i]->Bitmap->Resize(Images[i]->Bitmap->Width * ScaleX,Images[i]->Bitmap->Height * ScaleY);
+			Images[i]->Size->Width = Images[i]->Bitmap->Width * ScaleX;
+			Images[i]->Size->Height = Images[i]->Bitmap->Height * ScaleY;
 			Quiz->Items[i].Reload = false;
 			}
 			catch(...)
@@ -105,6 +234,7 @@ for (int i=0; i < Quiz->NumItems; i++) {
 
 			}
 		}
+
 
 static TCommand *Command=NULL;
 int Code;
@@ -116,6 +246,8 @@ string Msg;
 		{
 		if (Command->GetResult(&Code,&Msg))
 			{
+			Memo1->Lines->Add(Msg.c_str());
+			Memo1->Lines->Add(Command->GetCommandString().c_str());
 			if (InsertLog)
 			{
 			//if (Code!=COMMAND::SUCCESS) {
@@ -141,13 +273,36 @@ while (MC->UICommands->GetCommand(Command))
 		else
 		Command->InsertResult(COMMAND::TOO_FEW_PARAMETERS,COMMAND::CommandErrorString[COMMAND::TOO_FEW_PARAMETERS]);
 		}
+
+	else if (Command->GetCommandName()=="UDP")
+		{
+		if (Command->GetParamCount()>0) {
+			AnsiString Str;
+			for (int i=0; i < Command->GetParamCount(); i++) {
+				if (Command->Param(i)->IsNumber())
+					Str = Str + FloatToStr(Command->Param(i)->GetAsNumber());
+				else
+					Str = Str + (AnsiString)(Command->Param(i)->GetAsString().c_str());
+			}
+			Command->InsertResult(COMMAND::SUCCESS,COMMAND::CommandErrorString[COMMAND::SUCCESS]);
+			   try{	SendToUDPServer (Str);  }
+					catch (...){
+						Command->InsertResult(COMMAND::NOT_CONNECTED,COMMAND::CommandErrorString[COMMAND::NOT_CONNECTED]);
+					}
+		}
+		else
+		Command->InsertResult(COMMAND::TOO_FEW_PARAMETERS,COMMAND::CommandErrorString[COMMAND::TOO_FEW_PARAMETERS]);
 	}
+}
 
 
+Image1->Opacity = Quiz->BGOpacity;
+BackImage->Opacity = Quiz->BGBlackOpacity;
 
-for (int i=Quiz->NumItems; i < 255; i++) {
+for (int i=Quiz->NumItems; i < 55; i++) {
 	Images[i]->Opacity = 0; // Bitmap->Clear(0);
 	Labels[i]->Opacity = 0;
+	LabelsImages[i]->Opacity = 0;
 	ItemLabels[i]->Opacity = 0;
 	}
 
@@ -165,46 +320,42 @@ for (int i=0; i < Quiz->NumItems; i++) {
 	double X = MotionsX[i].GetPosition(Timer1->Interval/1000.0);
 	double Y = MotionsY[i].GetPosition(Timer1->Interval/1000.0);
 
-
-	Images[i]->Position->X = X * (TotalWidth-150);
-	Images[i]->Position->Y = Y * Form1->Height;
-
+	Images[i]->Scale->X = 1;// Quiz->Items[i].SizeX * Quiz->Items[i].Scale;
+	Images[i]->Scale->Y = 1; //Quiz->Items[i].SizeY * Quiz->Items[i].Scale;
+	Images[i]->Position->X = X * TotalWidth;
+	Images[i]->Position->Y = (ImagesFrame[i]->Height - Images[i]->Height)/2 + Y * Form1->Height;
 	Images[i]->Opacity = Quiz->Items[i].Image.Opacity.GetCurrent();
 
-//	if (Images[i]->Position->X <400) Images[i]->Position->X += 400;
+	ImagesFrame[i]->Scale->X = Images[i]->Scale->X;
+	ImagesFrame[i]->Scale->Y = Images[i]->Scale->Y;
+	ImagesFrame[i]->Position->X = Images[i]->Position->X - (ImagesFrame[i]->Width - Images[i]->Width ) / 2;
+	ImagesFrame[i]->Position->Y = Images[i]->Position->Y - (ImagesFrame[i]->Height - Images[i]->Height) / 2;
+	ImagesFrame[i]->Opacity = Quiz->ShowFrame ? Images[i]->Opacity : 0;
 
-	//if (Images[i]->Position->X > TotalWidth-250) Images[i]->Opacity = (TotalWidth- Images[i]->Position->X -150) /100.0;
-	//else if (Images[i]->Position->X < 100)
-	//	Images[i]->Opacity = (Images[i]->Position->X) /100.0;
-	//else Images[i]->Opacity = 1;
+	if (ImagesFrame[i]->Position->X < 0) { Images[i]->Position->X = Images[i]->Position->X -ImagesFrame[i]->Position->X; ImagesFrame[i]->Position->X = 0;}
+	if (ImagesFrame[i]->Position->Y < 0) { Images[i]->Position->Y = Images[i]->Position->Y -ImagesFrame[i]->Position->Y; ImagesFrame[i]->Position->Y = 0;}
 
-	//if (Quiz->Items[i].PosX * (TotalWidth-150) > TotalWidth-250) Images[i]->Opacity = (TotalWidth- Quiz->Items[i].PosX * (TotalWidth-150) -150) /100.0;
-	//else if (Quiz->Items[i].PosX * (TotalWidth-150) < 400) Images[i]->Opacity = 0;
-	//	Images[i]->Opacity = (Quiz->Items[i].PosX)* (TotalWidth-150) /100.0;
-	//else Images[i]->Opacity = 1;
-
-	//Images[i]->Opacity = Images[i]->Opacity * Quiz->Items[i].Opacity;
-
-	//Images[i]->Scale->X = Images[i]->Scale->X * Quiz->Items[i].Scale;
-	//Images[i]->Scale->Y = Images[i]->Scale->Y * Quiz->Items[i].Scale;
-
-	Images[i]->Position->Y = Y * Form1->Height;
-	Images[i]->Scale->X = Quiz->Items[i].SizeX * Quiz->Items[i].Scale;
-	Images[i]->Scale->Y = Quiz->Items[i].SizeY * Quiz->Items[i].Scale;
-
-	Labels[i]->Position->X = Images[i]->Position->X + (Images[i]->Width*Images[i]->Scale->X) /2.0;
-	Labels[i]->Position->Y = Images[i]->Position->Y + (Images[i]->Height*Images[i]->Scale->Y)/3.0;
+	ImagesShadow[i]->Scale->X = ImagesFrame[i]->Scale->X;
+	ImagesShadow[i]->Scale->Y = ImagesFrame[i]->Scale->Y;
+	ImagesShadow[i]->Position->X =  ImagesFrame[i]->Position->X +15;
+	ImagesShadow[i]->Position->Y =  ImagesFrame[i]->Position->Y +15;
+	ImagesShadow[i]->Opacity = Quiz->ShowFrame ? Images[i]->Opacity /1.5 : 0.75;
 
 	ItemLabels[i]->Position->X = Images[i]->Position->X + Quiz->Items[i].Label.PosX.GetCurrent();
 	ItemLabels[i]->Position->Y = Images[i]->Position->Y + Quiz->Items[i].Label.PosY.GetCurrent();
 
-	Labels[i]->Scale->X = 1.5* Images[i]->Scale->X;
-	Labels[i]->Scale->Y = 1.5* Images[i]->Scale->Y;
+	Labels[i]->Scale->X = Quiz->Items[i].ID.ScaleX.Update(1) ;
+	Labels[i]->Scale->Y = Quiz->Items[i].ID.ScaleY.Update(1) ;
+	LabelsImages[i]->Scale->X = Quiz->Items[i].ID.ScaleX.Update(1) ;
+	LabelsImages[i]->Scale->Y = Quiz->Items[i].ID.ScaleY.Update(1) ;//3* Images[i]->Scale->Y;
 
 	ItemLabels[i]->Scale->X = Quiz->Items[i].Label.ScaleX.GetCurrent();
 	ItemLabels[i]->Scale->Y = Quiz->Items[i].Label.ScaleY.GetCurrent();
 
 	ItemLabels[i]->Text = Quiz->Items[i].Label.Caption.c_str();
+	if (ItemLabels[i]->Text!="") {
+		int t=1;
+		}
 
 	//Label1->StyledSettings = Label1->StyledSettings << TStyledSetting::FontColor;
 	//Label1->FontColor = claCrimson;
@@ -213,27 +364,46 @@ for (int i=0; i < Quiz->NumItems; i++) {
 
 
 	Labels[i]->StyledSettings = Labels[i]->StyledSettings >> TStyledSetting::ssFontColor;
-	Labels[i]->TextSettings->FontColor = 0xffee8822;
+	Labels[i]->TextSettings->FontColor = Quiz->Items[i].ID.Color;
 
 	ItemLabels[i]->StyledSettings = ItemLabels[i]->StyledSettings >> TStyledSetting::ssFontColor;
-	ItemLabels[i]->TextSettings->FontColor = Quiz->Items[i].Label.Color;
+	ItemLabels[i]->TextSettings->FontColor =  Quiz->Items[i].Label.Color;
+
+  //	ItemLabels[i]->StyledSettings = ItemLabels[i]->StyledSettings >> TStyledSetting::ssSize;
+  //	ItemLabels[i]->TextSettings->Font->Size = 18;
 
 	//if (Quiz->Items[i].Label.Color.c_str()!="") ItemLabels[i]->TextSettings->FontColor = StrToInt(Quiz->Items[i].Label.Color.c_str());
 	//ItemLabels[i]->TextSettings->FontColor = 0xffee8822;
 	ItemLabels[i]->Opacity = Quiz->Items[i].Label.Opacity.GetCurrent();
+	if (ItemLabels[i]->Opacity>0) {
+		int u=1;
+		}
 
 	//Labels[i]->FontColor = 0xaa5511;
 	Labels[i]->Text = i+1;
+	int TextLength = Labels[i]->Text.Length();
 
-	if (Quiz->Items[i].AddNumber == true) {
-					 Labels[i]->Opacity = 0.8 * Images[i]->Opacity ;
+	Labels[i]->Position->X = Images[i]->Position->X + (Images[i]->Size->Width) /2.0 - TextLength * 4 * Labels[i]->Scale->X + Quiz->Items[i].ID.PosX.Update(1);
+	Labels[i]->Position->Y = Images[i]->Position->Y + (Images[i]->Size->Height) - (Labels[i]->Height - Quiz->Items[i].ID.PosY.Update(1)) /2 * Labels[i]->Scale->Y / 2;
+	LabelsImages[i]->Position->X = Images[i]->Position->X + Images[i]->Size->Width  + Labels[i]->Scale->X * Quiz->Items[i].ID.PosX.Update(1); //Images[i]->Position->X + (Images[i]->Size->Width) + 50  ;// /2.0 - TextLength * 4 * LabelsImages[i]->Scale->X;
+	LabelsImages[i]->Position->Y =  Images[i]->Position->Y + Images[i]->Size->Height  + Quiz->Items[i].ID.PosY.Update(1) * Labels[i]->Scale->Y ; //Images[i]->Position->Y + (Images[i]->Size->Height) - (LabelsImages[i]->Height - Quiz->Items[i].LabelsYOffset) /2 * Labels[i]->Scale->Y / 2;
+
+	if (Quiz->Items[i].AddID == 1) {
+					 Labels[i]->Opacity = Quiz->Items[i].ID.Opacity.Update(1) * Images[i]->Opacity;
+					 LabelsImages[i]->Opacity = 0;
+		}
+	else if (Quiz->Items[i].AddID == 2) {
+				   LabelsImages[i]->Opacity = Quiz->Items[i].ID.Opacity.Update(1) * Images[i]->Opacity;
+				   Labels[i]->Opacity = 0;
 		}
 	else
 		{
 			Labels[i]->Opacity = 0.0;
+			LabelsImages[i]->Opacity = 0;
 		}
 MainLabel->Opacity = Quiz->LabelOpacity;
-MainLabel->Text = Quiz->Label.c_str();
+wstring ss = UTF8toUnicode(Quiz->Label);
+MainLabel->Text = ss.c_str();
 MainLabel->Scale->X = 10;
 MainLabel->Scale->Y = 10;
 MainLabel->StyledSettings = MainLabel->StyledSettings >> TStyledSetting::ssFontColor;
@@ -255,10 +425,6 @@ MainLabel->Position->Y = Form1->Height/2 - t2*10/2;
 //ItemLabels[1]->Opacity = 1;
 //ItemLabels[1]->Text = "asdfadsf";
 //ItemLabels[i]->TextSettings->FontColor = 0xffee8822;
-
-
-
-
 	}
 }
 
@@ -287,6 +453,19 @@ if (Key==37) {
   //	sprintf(str,"Script.RunScript,%d",ScriptId);
   //	MC->Commands->CreateCommand(str);
 }
+
+if (KeyChar==32) {  //space bar to start
+	MC->Commands->CreateCommand("Script.RunScript,4");
+}
+
+if ((KeyChar>='1') && (KeyChar<='9'))
+	{
+	MC->Commands->CreateCommand("Script.StopScript,RotateQuizId");
+    char str[255];
+	sprintf(str,"Script.Set,CurrentQuiz,%d",KeyChar-49);
+	MC->Commands->CreateCommand(str);
+	MC->Commands->CreateCommand("Script.RunScript,RotateQuizId");
+	}
 
 if (KeyChar=='a')
 	{
@@ -381,6 +560,7 @@ while (i < AData.get_length()-1)
 
 void __fastcall TForm1::FormClose(TObject *Sender, TCloseAction &Action)
 {
+Memo1->Lines->SaveToFile("Commandlog.txt");
 Application-> Terminate();
 return;
 
@@ -472,3 +652,43 @@ if (Key==13) {
 }
 //---------------------------------------------------------------------------
 
+void TForm1::SendToUDPServer(AnsiString Str)
+{
+TByteDynArray Info;
+	Info.set_length(Str.Length());
+	for (int j=0; j < Str.Length(); j++) {
+	 Info[j] = Str[j+1];
+	}
+IdUDPClient1->SendBuffer(Info);
+}
+
+
+
+
+
+ /*
+Quiz.LoadImage,0,"01.jpg",Scale,Scale,AddNumber,LabelsXOffset,LabelYOffset,5,5,color,0.5
+Delay,Interval
+Quiz.LoadImage,1,"02.jpg",Scale,Scale,AddNumber,LabelsXOffset,LabelYOffset,5,5,color,0.5
+Delay,Interval
+Quiz.LoadImage,2,"03.jpg",Scale,Scale,AddNumber,LabelsXOffset,LabelYOffset,5,5,color,0.5
+Delay,Interval
+Quiz.LoadImage,3,"04.jpg",Scale,Scale,AddNumber,LabelsXOffset,LabelYOffset,5,5,color,0.5
+Delay,Interval
+Quiz.LoadImage,4,"05.jpg",Scale,Scale,AddNumber,LabelsXOffset,LabelYOffset,5,5,color,0.5
+Delay,Interval
+Quiz.LoadImage,5,"06.jpg",Scale,Scale,AddNumber,LabelsXOffset,LabelYOffset,5,5,color,0.5
+Delay,Interval
+Quiz.LoadImage,6,"07.jpg",Scale,Scale,AddNumber,LabelsXOffset,LabelYOffset,5,5,color,0.5
+Delay,Interval
+Quiz.LoadImage,7,"08.jpg",Scale,Scale,AddNumber,LabelsXOffset,LabelYOffset,5,5,color,0.5
+Delay,Interval
+Quiz.LoadImage,8,"09.jpg",Scale,Scale,AddNumber,LabelsXOffset,LabelYOffset,5,5,color,0.5
+Delay,Interval
+Quiz.LoadImage,9,"10.jpg",Scale,Scale,AddNumber,LabelsXOffset,LabelYOffset,5,5,color,0.5
+Delay,Interval
+Quiz.LoadImage,10,"11.jpg",Scale,Scale,AddNumber,LabelsXOffset,LabelYOffset,5,5,color,0.5
+Delay,Interval
+Quiz.LoadImage,11,"12.jpg",Scale,Scale,AddNumber,LabelsXOffset,LabelYOffset,5,5,color,0.5
+Delay,Interval
+   */

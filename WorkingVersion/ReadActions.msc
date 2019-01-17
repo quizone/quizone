@@ -1,0 +1,11 @@
+Delay,0.4
+Set,Correct,0
+Query.ReadAction
+Delay,0.1
+IfRestart,NewAnswer,0
+If,ActionQuestion,ActionAnswer,"Set,Correct,1"
+Set,NewAnswer,0
+If,Correct,1,"Script.RunScript,CorrectScript"
+If,Correct,0,"Script.RunScript,WrongScript"
+Delay,0.1
+Restart

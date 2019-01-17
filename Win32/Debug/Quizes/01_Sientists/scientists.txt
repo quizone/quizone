@@ -1,0 +1,28 @@
+01,Einstain
+02,Galileo Galilei
+03,Mikolaj Kopernik
+04,Giordano Bruno
+05,Isaac Newton
+06,Marie Curie
+07,Michael Faraday
+08,Konstantin Tsiolkovsky
+09,Mikhail Lomonosov
+10,Johannes Kepler
+11,Nikola Tesla
+12,James Joule
+13,Dmitri Mendeleev
+14,Alfred Nobel
+15,Charles Darwin
+16,Arhimed
+17,André Ampère
+18,Pifagor
+19,Stephen Hawking
+20,Rosalind Franklin
+21,Alexander Bell
+22,Leonardo da Vinci
+23,Neil Tyson
+24,Alexander Fleming
+25,Tim Berners-Lee
+26,Erwin Schrödinger
+27,Thomas Edison
+28,Max Planck

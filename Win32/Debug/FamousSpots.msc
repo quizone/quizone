@@ -1,36 +1,66 @@
-Set,Rate,0.005
-Set,Scale,7
+#Quiz name:
+#values Initialization
 
+Query.Set,QuizID,7
+Set,Rate,0.002
+Set,Scale,0.6.8
+Set,Acc,20
+Set,LabelYOffset,10
+Set,NumOfItems,16
+Set,QuizLabel,"Famous spots"
+Quiz.SetPath,"Quizes/FamousSpots/"
+
+#Play initialization
 Quiz.Opacity,0,0
-Quiz.Initialize,15,1,Rate,1,0.2
-Set,QuizLabel,"World famous sites"
-Query.Set,QuizID,4
+Quiz.Initialize,NumOfItems,1,Rate,Acc,0.2
+
+Quiz.SetLabel,QuizLabel
+Quiz.SetLabelOpacity,1,3
+
+Set,color,"0xffffffff"
+
 Delay,0.1
 
-Quiz.Initialize,16,1,Rate,1,0.1
-Quiz.SetPath,"c:/Quizone/Quizes/FamousSpots/"
-Quiz.LoadImage,0,"1.png",Scale,Scale
-Quiz.LoadImage,1,"2.png",Scale,Scale
-Quiz.LoadImage,2,"3.png",Scale,Scale
-Quiz.LoadImage,3,"4.png",Scale,Scale
-Quiz.LoadImage,4,"5.png",Scale,Scale
-Quiz.LoadImage,5,"6.png",Scale,Scale
-Quiz.LoadImage,6,"7.png",Scale,Scale
-Quiz.LoadImage,7,"8.png",Scale,Scale
-Quiz.LoadImage,8,"9.png",Scale,Scale
-Quiz.LoadImage,9,"10.png",Scale,Scale
-Quiz.LoadImage,10,"11.png",Scale,Scale
-Quiz.LoadImage,11,"12.png",Scale,Scale
-Quiz.LoadImage,12,"13.png",Scale,Scale
-Quiz.LoadImage,13,"14.png",Scale,Scale
-Quiz.LoadImage,14,"15.png",Scale,Scale
-Quiz.LoadImage,15,"16.jpg",Scale,Scale
-Quiz.LoadImage,16,"17.png",Scale,Scale
-Quiz.LoadImage,17,"18.jpg",Scale,Scale
-Quiz.LoadImage,18,"19.jpg",Scale,Scale
-Quiz.LoadImage,19,"20.jpg",Scale,Scale
-Quiz.LoadImage,20,"21.jpg",Scale,Scale
-Quiz.LoadImage,21,"22.jpg",Scale,Scale
-Quiz.LoadImage,22,"frame.png",5,5,0
+#Quiz.LoadBG,"bg.png"
+#Quiz.SetBGOpacity,0
+Set,Interval,0.2
+Quiz.LoadImage,0,"01.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,1,"02.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,2,"03.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,3,"04.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,4,"05.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,5,"06.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,6,"07.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,7,"08.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,8,"09.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,9,"10.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,10,"11.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,11,"12.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,12,"13.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,13,"14.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,14,"15.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+Quiz.LoadImage,15,"16.jpg",Scale,Scale,AddNumber,LabelYOffset,color
+Delay,Interval
+
+Quiz.LoadFrame,"Frame.png"
+Quiz.ShowFrame,1
+
 
 Script.RunScript,QuizStart
+
+

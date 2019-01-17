@@ -1,0 +1,37 @@
+#bool SetLabelOpacityCommand		(TCommand *Command,void* Object);
+#bool SetBGOpacityCommand		(TCommand *Command,void* Object);
+#bool SetBGBlackOpacityCommand		(TCommand *Command,void* Object);
+#bool SetCommand	   		(TCommand *Command,void* Object);
+#bool InitializeCommand	(TCommand *Command,void* Object);
+#bool LoadImageCommand	(TCommand *Command,void* Object);
+#bool SetPathCommand		(TCommand *Command,void* Object);
+#bool SetModelCommand	(TCommand *Command,void* Object);
+#bool SetLabelCommand	(TCommand *Command,void* Object);
+#bool SetRateCommand		(TCommand *Command,void* Object);
+#bool OpacityCommand	   	(TCommand *Command,void* Object);
+#bool RandomizeCommand 	(TCommand *Command,void* Object);
+#bool SetScaleCommand 	(TCommand *Command,void* Object);
+#bool LoadFrameCommand 	(TCommand *Command,void* Object);
+#bool ShowFrameCommand 	(TCommand *Command,void* Object);
+#bool LoadBGCommand 	(TCommand *Command,void* Object);
+#bool ShowBGCommand 	(TCommand *Command,void* Object);
+#bool SetItemLabelCommand 	(TCommand *Command,void* Object);
+
+#https://www.youtube.com/watch?v=dJoXVILGeKQ
+
+IfEnd,StartOnce,1
+Set,StartOnce,1
+
+Script.LoadScript,"LowerAudio.msc",5,1
+Quiz.SetBGBlackOpacity,1,4
+Quiz.SetLabelOpacity,0,1
+
+Delay,2
+Quiz.SetLabel,"Lets Quizone!"
+Quiz.SetLabelOpacity,1,2
+Delay,2
+Quiz.Opacity,0,1
+Quiz.SetLabelOpacity,0,1
+#UI.UDP,"pause"
+Delay,1
+Script.RunScript,RotateQuizId

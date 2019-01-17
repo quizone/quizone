@@ -18,11 +18,13 @@ __fastcall TForm2::TForm2(TComponent* Owner)
 //Form2->Height = 1030;
 //Form2->FullScreen = true;
 //Form2->Close();
-//Form2->Show();
+Form2->Show();
 }
 //---------------------------------------------------------------------------
 void __fastcall TForm2::FormCreate(TObject *Sender)
 {
+//Form2->Visible = false;
+return;
 Images = new TImage*[255];
 Labels = new TLabel*[255];
 MotionsX = new TAxisMotion[255];
@@ -150,7 +152,7 @@ for (int i=0; i < Quiz->NumItems; i++) {
 	Labels[i]->FontColor = 0x4455ff;
 	Labels[i]->Text = i+1;
 
-	if (Quiz->Items[i].AddNumber == true) {
+	if (Quiz->Items[i].AddID == 1) {
 					 Labels[i]->Opacity = 0.6;
 		}
 	else

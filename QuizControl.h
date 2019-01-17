@@ -31,7 +31,7 @@ double Rate;
 class TVisualObject
 {
 public:
-TVisualObject() : Opacity(1)  {ScaleX.Set(1); ScaleY.Set(1);};
+TVisualObject() :Opacity(0) {ScaleX.Set(1); ScaleY.Set(1);PosX.Set(0); PosY.Set(0);Color = 0xffffffff;};
 TLinearMotion Opacity;
 TLinearMotion PosX;
 TLinearMotion PosY;
@@ -46,17 +46,23 @@ unsigned long Color;
 class TItem
 {
 public:
-TItem() {Scale = 1; Reload = false; AddNumber=true;};
+TItem() {Scale = 1; Reload = false; AddID=1;};
 string FileName;
+string QRFileName;
 double SizeX;
 double SizeY;
 double PosX;
 double PosY;
 TVisualObject Image;
+TVisualObject ID;
 TVisualObject Label;
+
 double Scale;
 bool Reload;
-bool AddNumber;
+int AddID;
+//int LabelsYOffset;
+//int LabelsXOffset;
+//unsigned long LabelColor;
 };
 
 //---------------------------------------------------------------------------
@@ -74,6 +80,24 @@ unsigned long InitialTime;
 double Acc;
 double TransitionTime;
 string Path;
+
+string FrameFileName;
+bool ShowFrame;
+bool ReloadFrame;
+
+string BGFilename;
+bool ShowBG;
+bool ReloadBG;
+double BGOpacity;
+double BGTargetOpacity;
+double BGOpacityStartingTime;
+double BGOpacityChangeRate;
+
+double BGBlackOpacity;
+double BGBlackTargetOpacity;
+double BGBlackOpacityStartingTime;
+double BGBlackOpacityChangeRate;
+
 string Label;
 double LabelOpacity;
 
